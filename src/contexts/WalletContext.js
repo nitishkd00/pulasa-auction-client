@@ -131,7 +131,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/wallet/bid`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/bid`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/wallet/withdraw`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/withdraw`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -211,7 +211,7 @@ export const WalletProvider = ({ children }) => {
       if (page > 1) params.append('page', page);
       if (limit !== 10) params.append('limit', limit);
       
-      const response = await fetch(`/api/wallet/transactions?${params}`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/transactions?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -238,7 +238,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/wallet/active-bids`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/active-bids`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -265,7 +265,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/wallet/won-auctions`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/won-auctions`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
