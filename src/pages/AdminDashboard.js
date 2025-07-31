@@ -60,7 +60,7 @@ const AdminDashboard = () => {
       }
 
       // Fetch recent bids
-      const bidsResponse = await fetch('/api/bids/recent', {
+      const bidsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/bids/recent', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
       }
 
       // Fetch users
-      const usersResponse = await fetch('/api/admin/users', {
+      const usersResponse = await fetch('https://pulasa-auction-server.onrender.com/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
