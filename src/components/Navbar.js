@@ -11,7 +11,7 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleGoToMainSite = () => {
-    window.open('http://localhost:8080', '_blank');
+    window.open('https://pulasa-main.vercel.app', '_blank');
   };
 
   return (
