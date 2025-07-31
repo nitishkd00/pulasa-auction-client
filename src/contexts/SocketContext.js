@@ -21,8 +21,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       // Connect to Socket.IO server
-      const isProd = process.env.NODE_ENV === 'production';
-      const socketUrl = isProd ? window.location.origin : 'http://localhost:5001';
+      const socketUrl = 'https://pulasa-auction-server.onrender.com';
       const newSocket = io(socketUrl, {
         auth: {
           token: localStorage.getItem('pulasa_ecommerce_token')
