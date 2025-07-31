@@ -1,0 +1,9 @@
+{
+  "name": "Pulasa Auction",
+  "short_name": "Pulasa",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "description": "Pulasa Auction Platform",
+  "icons": []
+} 

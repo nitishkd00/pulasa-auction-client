@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: pulasa-auction-frontend
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_UNIFIED_AUTH_URL
+        value: https://api.pulasa.com
+      - key: REACT_APP_AUCTION_API_URL
+        value: https://auction-api.pulasa.com
+    autoDeploy: true 

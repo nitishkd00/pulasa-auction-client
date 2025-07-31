@@ -1,0 +1,21 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_UNIFIED_AUTH_URL": "@react_app_unified_auth_url",
+    "REACT_APP_AUCTION_API_URL": "@react_app_auction_api_url",
+    "REACT_APP_SOCKET_URL": "@react_app_socket_url"
+  },
+  "functions": {
+    "build/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+} 
