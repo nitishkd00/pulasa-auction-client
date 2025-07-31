@@ -30,7 +30,7 @@ const AdminDashboard = () => {
       setLoading(true);
       
       // Fetch auction stats
-      const statsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auctions/stats', {
+      const statsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auction/stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -48,7 +48,7 @@ const AdminDashboard = () => {
       }
 
       // Fetch all auctions
-      const auctionsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auctions', {
+      const auctionsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auction', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
       }
 
       // Fetch recent bids
-      const bidsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/bids/recent', {
+      const bidsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/bid/recent', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
