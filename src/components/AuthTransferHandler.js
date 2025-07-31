@@ -48,6 +48,12 @@ const AuthTransferHandler = ({ children }) => {
           } else {
             console.error('❌ AuthTransferHandler: Authentication failed:', result.error);
             setTransferStatus('failed');
+            
+            // Show user-friendly error message
+            if (result.error.includes('Network blocked by client')) {
+              console.log('💡 Suggesting manual login due to network blocking');
+              // You could show a toast or modal here suggesting manual login
+            }
           }
         } else {
           console.log('🔍 AuthTransferHandler: No auth token in URL');
@@ -99,6 +105,48 @@ const AuthTransferHandler = ({ children }) => {
           <div style={{ fontSize: '14px', marginTop: '10px', opacity: 0.7 }}>
             Authenticating from Pulasa.com
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show failed transfer status with manual login option
+  if (transferStatus === 'failed') {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        fontSize: '18px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div>❌ Authentication Transfer Failed</div>
+          <div style={{ fontSize: '14px', marginTop: '10px', opacity: 0.7 }}>
+            Please login manually to continue
+          </div>
+          <button 
+            onClick={() => setTransferStatus('none')}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Continue to Login
+          </button>
         </div>
       </div>
     );

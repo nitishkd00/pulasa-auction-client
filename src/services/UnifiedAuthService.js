@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class UnifiedAuthService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_UNIFIED_AUTH_URL || 'http://localhost:6001';
+    this.baseURL = 'https://pulasa-auth-service.onrender.com';
     this.tokenKey = 'pulasa_ecommerce_token';
   }
 
@@ -24,6 +24,8 @@ class UnifiedAuthService {
   // Validate token with unified auth service
   async validateToken(token) {
     try {
+      console.log('🔍 Validating token with unified auth service...');
+      
       const response = await fetch(`${this.baseURL}/api/auth/validate`, {
         method: 'POST',
         headers: {
@@ -32,10 +34,23 @@ class UnifiedAuthService {
         body: JSON.stringify({ token }),
       });
 
+      if (!response.ok) {
+        console.error('❌ Token validation HTTP error:', response.status, response.statusText);
+        return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+      }
+
       const data = await response.json();
+      console.log('✅ Token validation response:', data.success ? 'Valid' : 'Invalid');
       return data;
     } catch (error) {
-      console.error('Token validation error:', error);
+      console.error('❌ Token validation network error:', error);
+      
+      // Check if it's a network blocking error
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+        console.warn('⚠️ Network request blocked by client (ad blocker/browser extension)');
+        return { success: false, error: 'Network blocked by client' };
+      }
+      
       return { success: false, error: 'Network error' };
     }
   }
@@ -151,6 +166,8 @@ class UnifiedAuthService {
   // Process authentication transfer from Pulasa.com
   async processAuthTransfer(authToken) {
     try {
+      console.log('🔄 Processing auth transfer with token length:', authToken ? authToken.length : 0);
+      
       // Validate the token with unified auth service
       const validation = await this.validateToken(authToken);
       
@@ -167,16 +184,41 @@ class UnifiedAuthService {
           message: 'Authentication transfer successful'
         };
       } else {
+        console.error('❌ Token validation failed:', validation.error);
         return {
           success: false,
-          error: 'Invalid authentication token'
+          error: validation.error || 'Invalid authentication token'
         };
       }
     } catch (error) {
-      console.error('Auth transfer error:', error);
+      console.error('❌ Auth transfer error:', error);
+      
+      // If it's a network error (blocked by client), try a fallback approach
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+        console.log('🔄 Network blocked, trying fallback authentication...');
+        
+        // Try to decode the token locally and use it directly
+        try {
+          // Store the token anyway and try to get user info
+          this.setToken(authToken);
+          const user = await this.getCurrentUser();
+          
+          if (user) {
+            console.log('✅ Fallback authentication successful');
+            return {
+              success: true,
+              user: user,
+              message: 'Authentication transfer successful (fallback)'
+            };
+          }
+        } catch (fallbackError) {
+          console.error('❌ Fallback authentication failed:', fallbackError);
+        }
+      }
+      
       return {
         success: false,
-        error: 'Authentication transfer failed'
+        error: 'Authentication transfer failed - please try logging in manually'
       };
     }
   }
