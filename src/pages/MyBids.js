@@ -17,7 +17,7 @@ const MyBids = () => {
   const fetchBids = async () => {
     try {
       const token = localStorage.getItem('pulasa_ecommerce_token');
-      const response = await axios.get('/api/bid/my-bids', {
+      const response = await axios.get('https://pulasa-auction-server.onrender.com/api/bid/my-bids', {
         params: { page, limit: 10 },
         headers: {
           'Authorization': `Bearer ${token}`
