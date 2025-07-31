@@ -33,7 +33,7 @@ export const WalletProvider = ({ children }) => {
       const token = localStorage.getItem('pulasa_ecommerce_token');
       console.log('Fetching wallet balance for user:', user.email, 'Token exists:', !!token);
       
-      const response = await fetch(`https://pulasa-auth-service.onrender.com/api/wallet/balance`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/balance`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -65,7 +65,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auth-service.onrender.com/api/wallet/topup/create-order`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/topup/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const WalletProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auth-service.onrender.com/api/wallet/topup/verify-payment`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/topup/verify-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

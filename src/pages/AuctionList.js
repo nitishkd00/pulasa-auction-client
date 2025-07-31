@@ -24,7 +24,7 @@ const AuctionList = () => {
         params.status = filter;
       }
       
-      const response = await axios.get('/api/auction', { params });
+      const response = await axios.get('https://pulasa-auction-server.onrender.com/api/auction', { params });
       const newAuctions = response.data.auctions;
       
       if (page === 1) {
