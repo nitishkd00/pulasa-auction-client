@@ -29,7 +29,7 @@ export const AuctionProvider = ({ children }) => {
       if (status) params.append('status', status);
       if (page > 1) params.append('page', page);
       
-      const response = await fetch(`/api/auction?${params}`);
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction?${params}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch auctions');
@@ -56,7 +56,7 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/auction/${id}`);
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${id}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch auction');
@@ -79,7 +79,7 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/auction/create`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/auction/${auctionId}/end`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auctionId}/end`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
@@ -147,7 +147,7 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/auction/${auctionId}/stats`, {
+      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auctionId}/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }

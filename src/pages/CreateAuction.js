@@ -102,7 +102,7 @@ const CreateAuction = () => {
     
     try {
       const token = localStorage.getItem('pulasa_ecommerce_token');
-      const response = await axios.post('/api/auction/create', {
+      const response = await axios.post('https://pulasa-auction-server.onrender.com/api/auction/create', {
         ...formData,
         base_price: parseFloat(formData.base_price)
       }, {
