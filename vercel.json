@@ -7,10 +7,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "build/**/*.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 } 
