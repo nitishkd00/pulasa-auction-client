@@ -1,13 +1,18 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
+  // Get environment variables for production URLs
+  const unifiedAuthUrl = process.env.REACT_APP_UNIFIED_AUTH_URL || 'https://api.pulasa.com';
+const auctionServerUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+const clientUrl = process.env.REACT_APP_CLIENT_URL || 'https://auction.pulasa.com';
+
   // Proxy for unified auth service (port 6001) - Specific endpoints only
   app.use('/api/auth', createProxyMiddleware({
-    target: 'http://localhost:6001',
+    target: unifiedAuthUrl,
     changeOrigin: true,
     logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
-      console.log(`🔗 Proxying unified auth request: ${req.method} ${req.url} -> http://localhost:6001${req.url}`);
+      console.log(`🔗 Proxying unified auth request: ${req.method} ${req.url} -> ${unifiedAuthUrl}${req.url}`);
     }
   }));
 
@@ -15,7 +20,7 @@ module.exports = function(app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://localhost:5001',
+      target: auctionServerUrl,
       changeOrigin: true,
       secure: false,
       logLevel: 'debug',
@@ -40,9 +45,9 @@ module.exports = function(app) {
         });
       },
       onProxyReq: (proxyReq, req, res) => {
-        console.log(`🔗 Proxying auction request: ${req.method} ${req.url} -> http://localhost:5001${req.url}`);
+        console.log(`🔗 Proxying auction request: ${req.method} ${req.url} -> ${auctionServerUrl}${req.url}`);
         // Add CORS headers to proxy request
-        proxyReq.setHeader('Origin', 'http://localhost:3000');
+        proxyReq.setHeader('Origin', clientUrl);
       },
       onProxyRes: (proxyRes, req, res) => {
         console.log(`📡 Auction Server response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
@@ -56,11 +61,11 @@ module.exports = function(app) {
 
   // Proxy for unified auth health check
   app.use('/health', createProxyMiddleware({
-    target: 'http://localhost:6001',
+    target: unifiedAuthUrl,
     changeOrigin: true,
     logLevel: 'debug',
     onProxyReq: (proxyReq, req, res) => {
-      console.log(`🔗 Proxying unified auth health check: ${req.method} ${req.url} -> http://localhost:6001/health`);
+      console.log(`🔗 Proxying unified auth health check: ${req.method} ${req.url} -> ${unifiedAuthUrl}/health`);
     }
   }));
 };

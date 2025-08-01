@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class UnifiedAuthService {
   constructor() {
-    this.baseURL = 'https://pulasa-auth-service.onrender.com';
+    this.baseURL = 'https://api.pulasa.com';
     this.tokenKey = 'pulasa_ecommerce_token';
   }
 

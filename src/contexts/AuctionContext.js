@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 
@@ -19,25 +20,36 @@ export const AuctionProvider = ({ children }) => {
   const { user } = useAuth();
   const { socket } = useSocket();
 
+  // Get API base URL from environment
+  const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+
   // Fetch all auctions
-  const fetchAuctions = async (status = null, page = 1) => {
+  const fetchAuctions = async (filters = {}) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      
       const params = new URLSearchParams();
-      if (status) params.append('status', status);
-      if (page > 1) params.append('page', page);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction?${params}`);
-      
-      if (!response.ok) {
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined && filters[key] !== '') {
+          params.append(key, filters[key]);
+        }
+      });
+
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/auction?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAuctions(data.auctions);
+        return data;
+      } else {
         throw new Error('Failed to fetch auctions');
       }
-      
-      const data = await response.json();
-      setAuctions(data.auctions || []);
-      return data;
     } catch (err) {
       setError(err.message);
       console.error('Fetch auctions error:', err);
@@ -47,7 +59,7 @@ export const AuctionProvider = ({ children }) => {
   };
 
   // Fetch single auction
-  const fetchAuction = async (id) => {
+  const fetchAuctionById = async (id) => {
     if (!id || id === 'undefined') {
       console.error('fetchAuction called with invalid id:', id);
       throw new Error('Invalid auction ID');
@@ -56,14 +68,20 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${id}`);
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/auction/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        return data.auction;
+      } else {
         throw new Error('Failed to fetch auction');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
       setError(err.message);
       console.error('Fetch auction error:', err);
@@ -79,28 +97,28 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/create`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/auction/create`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(auctionData)
       });
       
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Auction created successfully!');
+        await fetchAuctions(); // Refresh auctions list
+        return data;
+      } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create auction');
       }
-      
-      const data = await response.json();
-      
-      // Refresh auctions list
-      await fetchAuctions();
-      
-      return data;
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
       console.error('Create auction error:', err);
       throw err;
     } finally {
@@ -114,26 +132,27 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auctionId}/end`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/auction/${auctionId}/end`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Auction ended successfully!');
+        await fetchAuctions(); // Refresh auctions list
+        return data;
+      } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to end auction');
       }
-      
-      const data = await response.json();
-      
-      // Refresh auctions list
-      await fetchAuctions();
-      
-      return data;
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
       console.error('End auction error:', err);
       throw err;
     } finally {
@@ -147,21 +166,21 @@ export const AuctionProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auctionId}/stats`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/auction/${auctionId}/stats`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get auction statistics');
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
+        throw new Error('Failed to fetch auction stats');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Get auction stats error:', err);
       throw err;
     } finally {
@@ -206,7 +225,7 @@ export const AuctionProvider = ({ children }) => {
     loading,
     error,
     fetchAuctions,
-    fetchAuction,
+    fetchAuctionById,
     createAuction,
     endAuction,
     getAuctionStats

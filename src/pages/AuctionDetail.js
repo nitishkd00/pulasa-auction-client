@@ -310,7 +310,8 @@ const AuctionDetail = () => {
                     onClick={async () => {
                       if (window.confirm('Are you sure you want to delete this auction? This cannot be undone.')) {
                         try {
-                          await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auction._id}`, {
+                          const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+        await fetch(`${apiBaseUrl}/api/auction/${auction._id}`, {
                             method: 'DELETE',
                             headers: { 'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}` },
                           });
@@ -356,7 +357,8 @@ const AuctionDetail = () => {
                         onClick={async () => {
                           setEndTimeLoading(true);
                           try {
-                            const res = await fetch(`https://pulasa-auction-server.onrender.com/api/auction/${auction._id}/end-time`, {
+                            const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+        const res = await fetch(`${apiBaseUrl}/api/auction/${auction._id}/end-time`, {
                               method: 'PATCH',
                               headers: {
                                 'Content-Type': 'application/json',

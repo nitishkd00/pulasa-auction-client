@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 
@@ -13,29 +14,37 @@ export const useWallet = () => {
 };
 
 export const WalletProvider = ({ children }) => {
-  const [wallet, setWallet] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [lockedAmount, setLockedAmount] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [activeBids, setActiveBids] = useState([]);
+  const [wonAuctions, setWonAuctions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const { user } = useAuth();
   const { socket } = useSocket();
 
-  // Fetch wallet balance
-  const fetchWalletBalance = async () => {
+  // Get API base URL from environment
+  const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+
+  // DEBUG: Log environment variables
+  console.log('🔍 DEBUG - WalletContext Environment Variables:');
+  console.log('REACT_APP_AUCTION_SERVER_URL:', process.env.REACT_APP_AUCTION_SERVER_URL);
+  console.log('Using apiBaseUrl:', apiBaseUrl);
+
+  const fetchBalance = async () => {
     if (!user) {
       console.log('No user found, skipping wallet fetch');
       return;
     }
-
     try {
       setLoading(true);
-      setError(null);
-      
       const token = localStorage.getItem('pulasa_ecommerce_token');
       console.log('Fetching wallet balance for user:', user.email, 'Token exists:', !!token);
       
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/balance`, {
+      const response = await fetch(`${apiBaseUrl}/api/wallet/balance`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -49,40 +58,37 @@ export const WalletProvider = ({ children }) => {
       
       const data = await response.json();
       console.log('Wallet data received:', data);
-      setWallet(data.wallet);
-      return data.wallet;
+      setBalance(data.balance);
+      setLockedAmount(data.locked_amount);
+      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Fetch wallet balance error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Create top-up order
   const createTopupOrder = async (amount) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/topup/create-order`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/topup/create-order`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ amount })
       });
-      
-      if (!response.ok) {
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create top-up order');
+        throw new Error(errorData.error || 'Failed to create topup order');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Create topup order error:', err);
       throw err;
     } finally {
@@ -90,34 +96,28 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  // Verify top-up payment
-  const verifyTopupPayment = async (paymentData) => {
+  const verifyPayment = async (paymentId, orderId, signature) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/topup/verify-payment`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/topup/verify-payment`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify({ paymentId, orderId, signature })
       });
-      
-      if (!response.ok) {
+
+      if (response.ok) {
+        const data = await response.json();
+        await fetchBalance(); // Refresh balance
+        return data;
+      } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to verify payment');
+        throw new Error(errorData.error || 'Payment verification failed');
       }
-      
-      const data = await response.json();
-      
-      // Refresh wallet balance
-      await fetchWalletBalance();
-      
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Verify topup payment error:', err);
       throw err;
     } finally {
@@ -125,22 +125,24 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  // Place bid using wallet
   const placeBid = async (auctionId, amount) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/bid`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/bid`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ auction_id: auctionId, amount })
+        body: JSON.stringify({ auctionId, amount })
       });
-      
-      if (!response.ok) {
+
+      if (response.ok) {
+        const data = await response.json();
+        await fetchBalance(); // Refresh balance
+        return data;
+      } else {
         const errorData = await response.json();
         console.error('Bid error response:', errorData);
         if (errorData.errors) {
@@ -150,15 +152,7 @@ export const WalletProvider = ({ children }) => {
         }
         throw new Error(errorData.error || 'Failed to place bid');
       }
-      
-      const data = await response.json();
-      
-      // Refresh wallet balance
-      await fetchWalletBalance();
-      
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Place bid error:', err);
       throw err;
     } finally {
@@ -166,34 +160,28 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  // Withdraw wallet balance
-  const withdrawWallet = async (amount) => {
+  const withdrawAmount = async (amount) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/withdraw`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/withdraw`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ amount })
       });
-      
-      if (!response.ok) {
+
+      if (response.ok) {
+        const data = await response.json();
+        await fetchBalance(); // Refresh balance
+        return data;
+      } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to withdraw funds');
+        throw new Error(errorData.error || 'Withdrawal failed');
       }
-      
-      const data = await response.json();
-      
-      // Refresh wallet balance
-      await fetchWalletBalance();
-      
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Withdraw wallet error:', err);
       throw err;
     } finally {
@@ -201,86 +189,81 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  // Get transaction history
-  const getTransactionHistory = async (page = 1, limit = 10) => {
+  const fetchTransactions = async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const params = new URLSearchParams();
-      if (page > 1) params.append('page', page);
-      if (limit !== 10) params.append('limit', limit);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/transactions?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
-        }
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString()
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch transaction history');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/transactions?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.transactions);
+        return data;
+      } else {
+        console.error('Failed to fetch transactions');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Get transaction history error:', err);
-      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Get active bids
-  const getActiveBids = async () => {
+  const fetchActiveBids = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/active-bids`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/active-bids`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch active bids');
+
+      if (response.ok) {
+        const data = await response.json();
+        setActiveBids(data.bids);
+        return data;
+      } else {
+        console.error('Failed to fetch active bids');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Get active bids error:', err);
-      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Get won auctions
-  const getWonAuctions = async () => {
+  const fetchWonAuctions = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`https://pulasa-auction-server.onrender.com/api/wallet/won-auctions`, {
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      const response = await fetch(`${apiBaseUrl}/api/wallet/won-auctions`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch won auctions');
+
+      if (response.ok) {
+        const data = await response.json();
+        setWonAuctions(data.auctions);
+        return data;
+      } else {
+        console.error('Failed to fetch won auctions');
       }
-      
-      const data = await response.json();
-      return data;
     } catch (err) {
-      setError(err.message);
       console.error('Get won auctions error:', err);
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -289,9 +272,13 @@ export const WalletProvider = ({ children }) => {
   // Initialize wallet balance when user logs in
   useEffect(() => {
     if (user) {
-      fetchWalletBalance();
+      fetchBalance();
     } else {
-      setWallet(null);
+      setBalance(0);
+      setLockedAmount(0);
+      setTransactions([]);
+      setActiveBids([]);
+      setWonAuctions([]);
     }
   }, [user]);
 
@@ -302,7 +289,7 @@ export const WalletProvider = ({ children }) => {
     // Listen for bid updates that might affect wallet
     socket.on('newBid', (bidData) => {
       // Refresh wallet balance when new bids are placed
-      fetchWalletBalance();
+      fetchBalance();
     });
 
     return () => {
@@ -311,17 +298,20 @@ export const WalletProvider = ({ children }) => {
   }, [socket, user]);
 
   const value = {
-    wallet,
+    balance,
+    lockedAmount,
+    transactions,
+    activeBids,
+    wonAuctions,
     loading,
-    error,
-    fetchWalletBalance,
+    fetchBalance,
     createTopupOrder,
-    verifyTopupPayment,
+    verifyPayment,
     placeBid,
-    withdrawWallet,
-    getTransactionHistory,
-    getActiveBids,
-    getWonAuctions
+    withdrawAmount,
+    fetchTransactions,
+    fetchActiveBids,
+    fetchWonAuctions
   };
 
   return (

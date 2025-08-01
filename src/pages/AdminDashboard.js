@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -17,6 +18,9 @@ const AdminDashboard = () => {
     totalUsers: 0
   });
 
+  // Get API base URL from environment
+  const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+
   useEffect(() => {
     if (!user || !user.is_admin) {
       navigate('/');
@@ -28,63 +32,57 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch auction stats
-      const statsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auction/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
-        }
-      });
-      
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setStats(statsData.stats || {
-          totalAuctions: 0,
-          activeAuctions: 0,
-          totalBids: 0,
-          totalRevenue: 0,
-          totalUsers: 0
-        });
-      }
+      const token = localStorage.getItem('pulasa_ecommerce_token');
 
-      // Fetch all auctions
-      const auctionsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/auction', {
+      // Fetch stats
+      const statsResponse = await fetch(`${apiBaseUrl}/api/auction/stats`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
-      if (auctionsResponse.ok) {
-        const auctionsData = await auctionsResponse.json();
-        setAuctions(auctionsData.auctions || []);
-      }
+      const statsData = await statsResponse.json();
+      setStats(statsData.stats || {
+        totalAuctions: 0,
+        activeAuctions: 0,
+        totalBids: 0,
+        totalRevenue: 0,
+        totalUsers: 0
+      });
+
+      // Fetch auctions
+      const auctionsResponse = await fetch(`${apiBaseUrl}/api/auction`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const auctionsData = await auctionsResponse.json();
+      setAuctions(auctionsData.auctions || []);
 
       // Fetch recent bids
-      const bidsResponse = await fetch('https://pulasa-auction-server.onrender.com/api/bid/recent', {
+      const bidsResponse = await fetch(`${apiBaseUrl}/api/bid/recent`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
-      if (bidsResponse.ok) {
-        const bidsData = await bidsResponse.json();
-        setBids(bidsData.bids || []);
-      }
+      const bidsData = await bidsResponse.json();
+      setBids(bidsData.bids || []);
 
       // Fetch users
-      const usersResponse = await fetch('https://pulasa-auction-server.onrender.com/api/admin/users', {
+      const usersResponse = await fetch(`${apiBaseUrl}/api/admin/users`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        setUsers(usersData.users || []);
-      }
+      const usersData = await usersResponse.json();
+      setUsers(usersData.users || []);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }

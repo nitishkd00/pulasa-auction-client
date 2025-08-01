@@ -11,7 +11,9 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleGoToMainSite = () => {
-    window.open('https://pulasa-main.vercel.app', '_blank');
+    const mainSiteUrl = process.env.REACT_APP_MAIN_SITE_URL || 'https://pulasa.com';
+    console.log('🔗 NAVBAR: Redirecting to main site:', mainSiteUrl);
+    window.open(mainSiteUrl, '_blank');
   };
 
   return (

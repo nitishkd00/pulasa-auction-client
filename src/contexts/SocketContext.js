@@ -21,7 +21,15 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       // Connect to Socket.IO server
-      const socketUrl = 'https://pulasa-auction-server.onrender.com';
+      const socketUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+      
+      // DEBUG: Log environment variables
+      console.log('🔍 DEBUG - Environment Variables:');
+      console.log('REACT_APP_AUCTION_SERVER_URL:', process.env.REACT_APP_AUCTION_SERVER_URL);
+      console.log('REACT_APP_UNIFIED_AUTH_URL:', process.env.REACT_APP_UNIFIED_AUTH_URL);
+      console.log('REACT_APP_MAIN_SITE_URL:', process.env.REACT_APP_MAIN_SITE_URL);
+      console.log('Using socketUrl:', socketUrl);
+      
       const newSocket = io(socketUrl, {
         auth: {
           token: localStorage.getItem('pulasa_ecommerce_token')

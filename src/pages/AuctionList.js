@@ -19,12 +19,15 @@ const AuctionList = () => {
 
   const fetchAuctions = async () => {
     try {
-      const params = { page, limit: 12 };
+      setLoading(true);
+      const params = new URLSearchParams();
       if (filter !== 'all') {
-        params.status = filter;
+        params.append('status', filter);
       }
-      
-      const response = await axios.get('https://pulasa-auction-server.onrender.com/api/auction', { params });
+      if (page > 1) params.append('page', page);
+
+      const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+      const response = await axios.get(`${apiBaseUrl}/api/auction`, { params });
       const newAuctions = response.data.auctions;
       
       if (page === 1) {
