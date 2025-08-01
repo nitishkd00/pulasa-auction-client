@@ -19,7 +19,7 @@ const AuctionDetail = () => {
   }, [id, navigate]);
 
   const { user } = useAuth();
-  const { fetchAuction } = useAuction();
+  const { fetchAuctionById } = useAuction();
   const { createBidOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();
   const { placeBid } = useWallet();
@@ -125,12 +125,10 @@ const AuctionDetail = () => {
         setLoading(false);
         return;
       }
-      const auctionData = await fetchAuction(id);
-      setAuction(auctionData.auction);
+      const auctionData = await fetchAuctionById(id);
+      setAuction(auctionData);
       setRecentBids(auctionData.recent_bids || []);
       setBidHistory(auctionData.bid_history || []);
-      // Remove the following line as bidsData is not defined:
-      // console.log('Bids loaded:', (bidsData.bids || []).length);
     } catch (err) {
       setError(err.message);
     } finally {
