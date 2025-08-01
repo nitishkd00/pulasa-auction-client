@@ -35,7 +35,7 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('pulasa_ecommerce_token');
 
       // Fetch stats
-      const statsResponse = await fetch(`${apiBaseUrl}/api/auction/stats`, {
+      const statsResponse = await fetch(`${apiBaseUrl}/api/admin/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
