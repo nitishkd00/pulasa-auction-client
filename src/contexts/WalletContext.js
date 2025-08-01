@@ -26,11 +26,6 @@ export const WalletProvider = ({ children }) => {
   // Get API base URL from environment
   const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
 
-  // DEBUG: Log environment variables
-  console.log('🔍 DEBUG - WalletContext Environment Variables:');
-  console.log('REACT_APP_AUCTION_SERVER_URL:', process.env.REACT_APP_AUCTION_SERVER_URL);
-  console.log('Using apiBaseUrl:', apiBaseUrl);
-
   const fetchBalance = async () => {
     if (!user) {
       console.log('No user found, skipping wallet fetch');
