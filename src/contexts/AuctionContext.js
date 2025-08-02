@@ -78,7 +78,7 @@ export const AuctionProvider = ({ children }) => {
       
       if (response.ok) {
         const data = await response.json();
-        return data.auction;
+        return data; // Return the complete response
       } else {
         throw new Error('Failed to fetch auction');
       }

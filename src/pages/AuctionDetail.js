@@ -126,7 +126,10 @@ const AuctionDetail = () => {
         return;
       }
       const auctionData = await fetchAuctionById(id);
-      setAuction(auctionData);
+      console.log('Auction data received:', auctionData);
+      console.log('Recent bids:', auctionData.recent_bids);
+      console.log('Bid history:', auctionData.bid_history);
+      setAuction(auctionData.auction);
       setRecentBids(auctionData.recent_bids || []);
       setBidHistory(auctionData.bid_history || []);
     } catch (err) {
@@ -515,7 +518,7 @@ const AuctionDetail = () => {
           </div>
         </div>
 
-        {/* Recent Bids */}
+        {/* Recent Bids - Public (visible to everyone) */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Bids</h2>
           {recentBids.length === 0 ? (
@@ -534,24 +537,26 @@ const AuctionDetail = () => {
             )}
         </div>
 
-        {/* Bid History */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Bid History</h2>
-          {bidHistory.length === 0 ? (
-            <div className="text-gray-500">No bid history yet.</div>
-          ) : (
-            bidHistory.map((bid, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
-                      <div>
-                  <div className="font-semibold">{bid.username}</div>
-                  <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
-                  {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
-                      </div>
-                <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
-              </div>
-            ))
-            )}
-        </div>
+        {/* Bid History - Only for logged-in users */}
+        {user && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Bid History</h2>
+            {bidHistory.length === 0 ? (
+              <div className="text-gray-500">No bid history yet.</div>
+            ) : (
+              bidHistory.map((bid, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
+                        <div>
+                    <div className="font-semibold">{bid.username}</div>
+                    <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
+                    {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
+                        </div>
+                  <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
+                </div>
+              ))
+              )}
+          </div>
+        )}
       </div>
 
       {successMessage && (
