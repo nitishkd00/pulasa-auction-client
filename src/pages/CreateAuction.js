@@ -103,8 +103,18 @@ const CreateAuction = () => {
     try {
       const token = localStorage.getItem('pulasa_ecommerce_token');
       const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+      // Convert local datetime to proper format for backend
+      const startTime = new Date(formData.start_time);
+      const endTime = new Date(formData.end_time);
+      
+      // Create ISO strings that preserve the local time
+      const startTimeISO = startTime.toISOString();
+      const endTimeISO = endTime.toISOString();
+      
       const response = await axios.post(`${apiBaseUrl}/api/auction/create`, {
         ...formData,
+        start_time: startTimeISO,
+        end_time: endTimeISO,
         base_price: parseFloat(formData.base_price)
       }, {
         headers: {
