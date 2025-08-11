@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Fish, Menu, X, AlertCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { Fish, Menu, X, AlertCircle, ArrowRight, ExternalLink, ArrowLeft } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleGoToMainSite = () => {
@@ -56,26 +56,22 @@ const Navbar = () => {
                   Welcome, {user.name || user.username}
                 </span>
                 <button
-                  onClick={logout}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  onClick={handleGoToMainSite}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
                 >
-                  Logout
+                  <ArrowLeft size={20} />
+                  <span>Back to Pulasa</span>
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-600 hover:text-orange-700 transition-colors font-medium"
+                <button
+                  onClick={handleGoToMainSite}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
                 >
-                  Login
-                </Link>
-                <Link
-                  to="/signup"
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  Sign Up
-                </Link>
+                  <ArrowLeft size={20} />
+                  <span>Back to Pulasa</span>
+                </button>
               </div>
             )}
           </div>
@@ -126,32 +122,21 @@ const Navbar = () => {
                     Welcome, {user.name || user.username}
                   </span>
                   <button
-                    onClick={() => {
-                      logout();
-                      setIsOpen(false);
-                    }}
-                    className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    onClick={handleGoToMainSite}
+                    className="flex items-center space-x-2 w-full mt-2 px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
                   >
-                    Logout
-                  </button>
+                    <ArrowLeft size={20} />
+                    <span>Back to Pulasa</span>
+                </button>
                 </div>
               ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="block px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Sign Up
-                  </Link>
-                </>
+                <button
+                  onClick={handleGoToMainSite}
+                  className="flex items-center space-x-2 w-full px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
+                >
+                  <ArrowLeft size={20} />
+                  <span>Back to Pulasa</span>
+                </button>
               )}
             </div>
           </div>
