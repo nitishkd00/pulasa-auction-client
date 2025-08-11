@@ -26,32 +26,50 @@ export const BidProvider = ({ children }) => {
   // Create bid order for authorization
   const createBidOrder = async (auctionId, amount, location = '') => {
     try {
+      console.log('🚀 Starting createBidOrder...', { auctionId, amount, location });
       setLoading(true);
       setError(null);
+      
+      const token = localStorage.getItem('pulasa_ecommerce_token');
+      console.log('🔑 Auth token:', token ? 'Present' : 'Missing');
+      
+      const requestBody = { 
+        auction_id: auctionId, 
+        amount: amount,
+        location: location
+      };
+      console.log('📤 Request body:', requestBody);
+      
+      console.log('🌐 Making API call to:', `${apiBaseUrl}/api/bid/place`);
       
       const response = await fetch(`${apiBaseUrl}/api/bid/place`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          auction_id: auctionId, 
-          amount: amount,
-          location: location
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ API Error Response:', errorData);
         throw new Error(errorData.error || 'Failed to create bid order');
       }
       
       const data = await response.json();
+      console.log('✅ API Success Response:', data);
       return data;
     } catch (err) {
+      console.error('💥 createBidOrder Error Details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
       setError(err.message);
-      console.error('Create bid order error:', err);
       throw err;
     } finally {
       setLoading(false);
@@ -154,17 +172,25 @@ export const BidProvider = ({ children }) => {
   // Place bid using Razorpay
   const placeBid = async (auctionId, amount, location = '') => {
     try {
+      console.log('🎯 Starting placeBid...', { auctionId, amount, location });
+      
       // Step 1: Create bid order
+      console.log('📋 Step 1: Creating bid order...');
       const orderResult = await createBidOrder(auctionId, amount, location);
+      console.log('📋 Step 1 Result:', orderResult);
       
       if (!orderResult.success) {
+        console.error('❌ Bid order creation failed:', orderResult);
         throw new Error('Failed to create bid order');
       }
 
       // Step 2: Initialize Razorpay Checkout
+      console.log('💳 Step 2: Initializing Razorpay...');
+      console.log('🔑 Razorpay Key ID:', process.env.REACT_APP_RAZORPAY_KEY_ID);
+      console.log('📊 Order Result:', orderResult);
+      
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: orderResult.razorpay_order.amount,
         amount: orderResult.razorpay_order.amount,
         currency: orderResult.razorpay_order.currency,
         name: 'Pulasa Auctions',
@@ -172,7 +198,10 @@ export const BidProvider = ({ children }) => {
         order_id: orderResult.razorpay_order.id,
         handler: async function (response) {
           try {
+            console.log('💳 Razorpay Payment Response:', response);
+            
             // Step 3: Verify payment
+            console.log('🔍 Step 3: Verifying payment...');
             await verifyPayment(
               auctionId,
               response.razorpay_payment_id,
