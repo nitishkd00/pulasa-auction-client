@@ -18,7 +18,7 @@ const Terms = () => (
       <h2 className="text-xl font-semibold mb-4">4. Payment & Refunds</h2>
       <ul className="list-disc pl-6 mb-4 text-gray-700">
         <li>All payments must be made in INR via the supported payment methods.</li>
-        <li>If you are outbid, your funds will be immediately refunded to your wallet balance.</li>
+        <li>If you are outbid, your funds will be immediately refunded to your payment method.</li>
         <li>Winning bidders must complete payment within the specified time or risk forfeiture of the item.</li>
       </ul>
       <h2 className="text-xl font-semibold mb-4">5. Item Descriptions & Condition</h2>

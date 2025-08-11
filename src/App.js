@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { AuctionProvider } from './contexts/AuctionContext';
 import { BidProvider } from './contexts/BidContext';
-import { WalletProvider } from './contexts/WalletContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -22,7 +21,6 @@ import AuctionDetail from './pages/AuctionDetail';
 import CreateAuction from './pages/CreateAuction';
 import Profile from './pages/Profile';
 import MyBids from './pages/MyBids';
-import WalletPage from './pages/Wallet';
 import AdminDashboard from './pages/AdminDashboard';
 import Terms from './pages/Terms';
 
@@ -104,10 +102,8 @@ const AppContent = () => {
             } 
           />
           <Route 
-            path="/wallet" 
             element={
               <ProtectedRoute>
-                <WalletPage />
               </ProtectedRoute>
             } 
           />
@@ -126,7 +122,6 @@ const App = () => {
       <SocketProvider>
         <AuctionProvider>
           <BidProvider>
-            <WalletProvider>
               <AppContent />
               <Toaster
                 position="top-right"
@@ -152,7 +147,6 @@ const App = () => {
                   },
                 }}
               />
-            </WalletProvider>
           </BidProvider>
         </AuctionProvider>
       </SocketProvider>

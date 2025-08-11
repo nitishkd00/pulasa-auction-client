@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useWallet } from '../contexts/WalletContext';
-import { Fish, Menu, X, Wallet, AlertCircle, ArrowRight, ExternalLink } from 'lucide-react';
+import { Fish, Menu, X, AlertCircle, ArrowRight, ExternalLink } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { wallet } = useWallet();
   const navigate = useNavigate();
 
   const handleGoToMainSite = () => {
@@ -48,12 +46,7 @@ const Navbar = () => {
                 <Link to="/my-bids" className="text-gray-600 hover:text-orange-700 transition-colors font-medium">
                   My Bids
                 </Link>
-                <Link to="/wallet" className="flex items-center space-x-1 text-gray-600 hover:text-orange-700 transition-colors font-medium">
-                  <Wallet className="h-4 w-4" />
-                  <span>Wallet</span>
-                  {wallet && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                      ₹{wallet.available_balance?.toFixed(0) || '0'}
                     </span>
                   )}
                 </Link>
@@ -137,17 +130,12 @@ const Navbar = () => {
                   My Bids
                 </Link>
                 <Link
-                  to="/wallet"
                   className="flex items-center justify-between px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
                   onClick={() => setIsOpen(false)}
                 >
                   <span className="flex items-center space-x-1">
-                    <Wallet className="h-4 w-4" />
-                    <span>Wallet</span>
                   </span>
-                  {wallet && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                      ₹{wallet.available_balance?.toFixed(0) || '0'}
                     </span>
                   )}
                 </Link>

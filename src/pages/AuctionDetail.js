@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAuction } from '../contexts/AuctionContext';
 import { useBid } from '../contexts/BidContext';
 import { useSocket } from '../contexts/SocketContext';
-import { useWallet } from '../contexts/WalletContext';
 import toast from 'react-hot-toast';
 
 const AuctionDetail = () => {
@@ -22,7 +21,6 @@ const AuctionDetail = () => {
   const { fetchAuctionById } = useAuction();
   const { createBidOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();
-  const { placeBid } = useWallet();
 
   const [auction, setAuction] = useState(null);
   const [bids, setBids] = useState([]);

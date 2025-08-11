@@ -223,16 +223,6 @@ class UnifiedAuthService {
     }
   }
 
-  // Get user wallet balance
-  async getWalletBalance() {
-    try {
-      const user = await this.getCurrentUser();
-      return user ? user.wallet_balance : 0;
-    } catch (error) {
-      console.error('Get wallet balance error:', error);
-      return 0;
-    }
-  }
 
   // Get user locked amount
   async getLockedAmount() {

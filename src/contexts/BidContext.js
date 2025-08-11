@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
+import toast from 'react-hot-toast';
 
 const BidContext = createContext();
 
@@ -19,19 +20,26 @@ export const BidProvider = ({ children }) => {
   const { user } = useAuth();
   const { socket } = useSocket();
 
-  // Create bid order
-  const createBidOrder = async (auctionId, amount) => {
+  // Get API base URL from environment
+  const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
+
+  // Create bid order for authorization
+  const createBidOrder = async (auctionId, amount, location = '') => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/bid/create-order`, {
+      const response = await fetch(`${apiBaseUrl}/api/bid/place`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         },
-        body: JSON.stringify({ auction_id: auctionId, amount })
+        body: JSON.stringify({ 
+          auction_id: auctionId, 
+          amount: amount,
+          location: location
+        })
       });
       
       if (!response.ok) {
@@ -50,51 +58,68 @@ export const BidProvider = ({ children }) => {
     }
   };
 
-  // Verify payment and place bid
-  const verifyPaymentAndBid = async (paymentData) => {
+  // Verify payment authorization
+  const verifyPayment = async (auctionId, paymentId, orderId, signature) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/bid/verify-payment`, {
+      const response = await fetch(`${apiBaseUrl}/api/bid/verify-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify({
+          auction_id: auctionId,
+          razorpay_payment_id: paymentId,
+          razorpay_order_id: orderId,
+          razorpay_signature: signature
+        })
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to verify payment and place bid');
+        throw new Error(errorData.error || 'Failed to verify payment');
       }
       
       const data = await response.json();
-      
-      // Refresh user bids
-      await fetchUserBids();
-      
       return data;
     } catch (err) {
       setError(err.message);
-      console.error('Verify payment error:', err);
+      console.error('Payment verification error:', err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch auction bids
+  const fetchAuctionBids = async (auctionId) => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/bid/auction/${auctionId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch auction bids');
+      }
+      
+      const data = await response.json();
+      return data.bids;
+    } catch (err) {
+      console.error('Fetch auction bids error:', err);
+      throw err;
+    }
+  };
+
   // Fetch user's bids
-  const fetchUserBids = async (page = 1) => {
+  const fetchUserBids = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       setError(null);
       
-      const params = new URLSearchParams();
-      if (page > 1) params.append('page', page);
-      
-      const response = await fetch(`/api/bid/my-bids?${params}`, {
+      const response = await fetch(`${apiBaseUrl}/api/bid/my-bids`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         }
@@ -105,8 +130,8 @@ export const BidProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      setUserBids(data.bids || []);
-      return data;
+      setUserBids(data.bids);
+      return data.bids;
     } catch (err) {
       setError(err.message);
       console.error('Fetch user bids error:', err);
@@ -115,84 +140,104 @@ export const BidProvider = ({ children }) => {
     }
   };
 
-  // Fetch auction bids
-  const fetchAuctionBids = async (auctionId, page = 1) => {
-    if (!auctionId || auctionId === 'undefined') {
-      return { bids: [] };
-    }
+  // Calculate platform fee (if any)
+  const calculatePlatformFee = (amount) => {
+    // No platform fee in this implementation
+    return 0;
+  };
+
+  // Get total amount including fees
+  const getTotalAmount = (amount) => {
+    return amount + calculatePlatformFee(amount);
+  };
+
+  // Place bid using Razorpay
+  const placeBid = async (auctionId, amount, location = '') => {
     try {
-      setLoading(true);
-      setError(null);
+      // Step 1: Create bid order
+      const orderResult = await createBidOrder(auctionId, amount, location);
       
-      const params = new URLSearchParams();
-      if (page > 1) params.append('page', page);
-      
-      const response = await fetch(
-        `/api/bid/auction/${auctionId}?${params}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
-          }
-        }
-      );
-      
-      if (!response.ok) {
-        if (response.status === 404 || response.status === 401 || response.status === 403) {
-          return { bids: [] };
-        }
-        throw new Error('Failed to fetch auction bids');
+      if (!orderResult.success) {
+        throw new Error('Failed to create bid order');
       }
-      
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      setError(err.message);
-      console.error('Fetch auction bids error:', err);
-      throw err;
-    } finally {
-      setLoading(false);
+
+      // Step 2: Initialize Razorpay Checkout
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount: orderResult.razorpay_order.amount,
+        amount: orderResult.razorpay_order.amount,
+        currency: orderResult.razorpay_order.currency,
+        name: 'Pulasa Auctions',
+        description: `Bid of ₹${amount} on auction`,
+        order_id: orderResult.razorpay_order.id,
+        handler: async function (response) {
+          try {
+            // Step 3: Verify payment
+            await verifyPayment(
+              auctionId,
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature
+            );
+
+            toast.success('Bid placed successfully!');
+            
+            // Emit socket event for real-time updates
+            if (socket) {
+              socket.emit('bidPlaced', {
+                auctionId,
+                amount,
+                bidder: user.id
+              });
+            }
+
+            // Refresh user bids
+            await fetchUserBids();
+            
+            return { success: true };
+          } catch (error) {
+            toast.error('Payment verification failed: ' + error.message);
+            throw error;
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+          contact: user.phone || ''
+        },
+        theme: {
+          color: '#7C3AED'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+      return { success: true, orderId: orderResult.razorpay_order.id };
+    } catch (error) {
+      toast.error('Failed to place bid: ' + error.message);
+      throw error;
     }
   };
 
-  // Calculate platform fee
-  const calculatePlatformFee = (bidAmount) => {
-    const fee = Math.min(Math.max(bidAmount * 0.02, 2), 5); // 2% with min ₹2, max ₹5
-    return Math.round(fee * 100) / 100; // Round to 2 decimal places
-  };
-
-  // Get total amount including platform fee
-  const getTotalAmount = (bidAmount) => {
-    const platformFee = calculatePlatformFee(bidAmount);
-    return bidAmount + platformFee;
-  };
-
-  // Listen for real-time bid updates
+  // Load user bids when user changes
   useEffect(() => {
-    if (!socket) return;
-
-    // Listen for new bids
-    socket.on('newBid', (bidData) => {
-      // Update user bids if the new bid is from current user
-      if (user && bidData.bidder === user.username) {
-        fetchUserBids();
-      }
-    });
-
-    return () => {
-      socket.off('newBid');
-    };
-  }, [socket, user]);
+    if (user) {
+      fetchUserBids();
+    }
+  }, [user]);
 
   const value = {
     userBids,
     loading,
     error,
-    createBidOrder,
-    verifyPaymentAndBid,
+    placeBid,
     fetchUserBids,
     fetchAuctionBids,
     calculatePlatformFee,
-    getTotalAmount
+    getTotalAmount,
+    createBidOrder,
+    verifyPayment
   };
 
   return (
@@ -200,4 +245,4 @@ export const BidProvider = ({ children }) => {
       {children}
     </BidContext.Provider>
   );
-}; 
+};
