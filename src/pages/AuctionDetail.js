@@ -165,7 +165,7 @@ const AuctionDetail = () => {
     try {
       setBidding(true);
       setError(null);
-      await placeBid(auction._id, parseFloat(bidAmount));
+      await createBidOrder(auction._id, parseFloat(bidAmount));
       setBidAmount('');
       setShowBidForm(false);
       toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);

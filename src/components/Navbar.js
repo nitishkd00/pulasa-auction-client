@@ -42,15 +42,9 @@ const Navbar = () => {
               </Link>
             )}
             {user && !user.is_admin && (
-              <>
-                <Link to="/my-bids" className="text-gray-600 hover:text-orange-700 transition-colors font-medium">
-                  My Bids
-                </Link>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    </span>
-                  )}
-                </Link>
-              </>
+              <Link to="/my-bids" className="text-gray-600 hover:text-orange-700 transition-colors font-medium">
+                My Bids
+              </Link>
             )}
           </div>
 
@@ -58,32 +52,30 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link to="/profile" className="text-gray-600 hover:text-orange-700 transition-colors font-medium">
-                  {user.name || user.email}
-                </Link>
+                <span className="text-gray-700 font-medium">
+                  Welcome, {user.name || user.username}
+                </span>
                 <button
-                  onClick={handleGoToMainSite}
-                  className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-medium flex items-center space-x-2"
+                  onClick={logout}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
-                  <span>Back to Pulasa</span>
-                  <ArrowRight className="h-4 w-4" />
-                  <ExternalLink className="h-3 w-3" />
+                  Logout
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Please login first</span>
-                </div>
-                <button
-                  onClick={handleGoToMainSite}
-                  className="flex items-center space-x-2 bg-orange-700 text-white px-4 py-2 rounded-lg hover:bg-orange-800 transition-colors font-medium"
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-orange-700 transition-colors font-medium"
                 >
-                  <span>Go to Pulasa</span>
-                  <ArrowRight className="h-4 w-4" />
-                  <ExternalLink className="h-3 w-3" />
-                </button>
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  Sign Up
+                </Link>
               </div>
             )}
           </div>
@@ -94,34 +86,32 @@ const Navbar = () => {
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-600 hover:text-orange-700 transition-colors"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            <Link
-              to="/auctions"
-              className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
-              onClick={() => setIsOpen(false)}
-            >
-              Auctions
-            </Link>
-            {user && user.is_admin && (
+        {/* Mobile Navigation */}
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1">
               <Link
-                to="/admin"
+                to="/auctions"
                 className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
                 onClick={() => setIsOpen(false)}
               >
-                Admin
+                Auctions
               </Link>
-            )}
-            {user && (
-              <>
+              {user && user.is_admin && (
+                <Link
+                  to="/admin"
+                  className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
+              {user && !user.is_admin && (
                 <Link
                   to="/my-bids"
                   className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
@@ -129,55 +119,46 @@ const Navbar = () => {
                 >
                   My Bids
                 </Link>
-                <Link
-                  className="flex items-center justify-between px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="flex items-center space-x-1">
+              )}
+              {user ? (
+                <div className="px-3 py-2">
+                  <span className="text-gray-700 font-medium">
+                    Welcome, {user.name || user.username}
                   </span>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    </span>
-                  )}
-                </Link>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleGoToMainSite}
-                  className="flex items-center space-x-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors font-medium w-full justify-center"
-                >
-                  <span>Back to Pulasa</span>
-                  <ArrowRight className="h-4 w-4" />
-                  <ExternalLink className="h-3 w-3" />
-                </button>
-              </>
-            )}
-            
-            {!user && (
-              <div className="space-y-3 px-3 py-3 bg-orange-50 rounded-lg border border-orange-200">
-                <div className="flex items-center space-x-2 text-orange-600">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Please login first</span>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  >
+                    Logout
+                  </button>
                 </div>
-                <button
-                  onClick={handleGoToMainSite}
-                  className="flex items-center space-x-2 bg-orange-700 text-white px-4 py-2 rounded-lg hover:bg-orange-800 transition-colors font-medium w-full justify-center"
-                >
-                  <span>Go to Pulasa</span>
-                  <ArrowRight className="h-4 w-4" />
-                  <ExternalLink className="h-3 w-3" />
-                </button>
-              </div>
-            )}
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="block px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 };
 
-export default Navbar; 
+export default Navbar;
