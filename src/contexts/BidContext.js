@@ -191,7 +191,7 @@ export const BidProvider = ({ children }) => {
       
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: orderResult.razorpay_order.amount,
+        amount: Math.round(orderResult.razorpay_order.amount * 100), // Convert rupees to paise for Razorpay
         currency: orderResult.razorpay_order.currency,
         name: 'Pulasa Auctions',
         description: `Bid of ₹${amount} on auction`,
