@@ -96,22 +96,21 @@ export const BidProvider = ({ children }) => {
   };
 
   // Verify payment authorization
-  const verifyPayment = async (auctionId, paymentId, orderId, signature) => {
+  const verifyPayment = async (paymentId, orderId, signature) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${apiBaseUrl}/api/bid/verify-payment`, {
+      const response = await fetch(`${apiBaseUrl}/api/bid/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         },
         body: JSON.stringify({
-          auction_id: auctionId,
-          razorpay_payment_id: paymentId,
-          razorpay_order_id: orderId,
-          razorpay_signature: signature
+          payment_id: paymentId,
+          order_id: orderId,
+          signature: signature
         })
       });
       
