@@ -140,37 +140,67 @@ const AuctionDetail = () => {
   const handleBid = async (e) => {
     e.preventDefault();
     
+    console.log('🎯 handleBid triggered with:', {
+      auctionId: auction?._id,
+      amount: bidAmount,
+      user: user?.id,
+      auctionStatus: auction?.status
+    });
+    
     if (!user) {
+      console.error('❌ User not authenticated in handleBid');
       navigate('/login');
       return;
     }
 
     const amount = parseFloat(bidAmount);
     if (!amount || amount <= 0) {
+      console.error('❌ Invalid bid amount:', bidAmount);
       setError('Please enter a valid bid amount');
       return;
     }
 
     if (auction && amount <= auction.highest_bid) {
+      console.error('❌ Bid amount too low:', {
+        bidAmount: amount,
+        currentHighest: auction.highest_bid
+      });
       setError(`Bid must be at least ₹1 higher than current highest bid: ₹${auction.highest_bid}`);
       return;
     }
+
+    console.log('✅ All validations passed, proceeding with bid placement...');
 
     // Show confirmation popup
     setShowConfirm(true);
   };
 
   const confirmBid = async () => {
+    console.log('🎯 confirmBid triggered');
     setShowConfirm(false);
+    
     try {
       setBidding(true);
       setError(null);
+      
+      console.log('🔄 Calling createBidOrder...');
       await createBidOrder(auction._id, parseFloat(bidAmount));
+      
+      console.log('✅ Bid order created successfully');
       setBidAmount('');
       setShowBidForm(false);
       toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+      
+      console.log('🔄 Refreshing auction data...');
       await loadAuctionData();
+      console.log('✅ Auction data refreshed');
+      
     } catch (err) {
+      console.error('💥 confirmBid error:', {
+        message: err.message,
+        name: err.name,
+        stack: err.stack
+      });
       setError(err.message);
     } finally {
       setBidding(false);

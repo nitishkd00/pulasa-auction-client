@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 import toast from 'react-hot-toast';
+import axios from 'axios'; // Added axios import
 
 const BidContext = createContext();
 
@@ -27,52 +28,70 @@ export const BidProvider = ({ children }) => {
   const createBidOrder = async (auctionId, amount, location = '') => {
     try {
       console.log('🚀 Starting createBidOrder...', { auctionId, amount, location });
-      setLoading(true);
-      setError(null);
       
+      // Check if user is authenticated
+      if (!user) {
+        console.error('❌ User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      // Check if auth token exists
       const token = localStorage.getItem('pulasa_ecommerce_token');
-      console.log('🔑 Auth token:', token ? 'Present' : 'Missing');
-      
-      const requestBody = { 
-        auction_id: auctionId, 
+      if (!token) {
+        console.error('❌ No auth token found');
+        throw new Error('No authentication token found');
+      }
+      console.log('🔑 Auth token: Present');
+
+      // Prepare request body
+      const requestBody = {
+        auction_id: auctionId,
         amount: amount,
-        location: location
+        location: location || ''
       };
       console.log('📤 Request body:', requestBody);
+
+      // Make API call
+      const apiUrl = `${apiBaseUrl}/api/bid/place`;
+      console.log('🌐 Making API call to:', apiUrl);
       
-      console.log('🌐 Making API call to:', `${apiBaseUrl}/api/bid/place`);
-      
-      const response = await fetch(`${apiBaseUrl}/api/bid/place`, {
-        method: 'POST',
+      const response = await axios.post(apiUrl, requestBody, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-      
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ API Error Response:', errorData);
-        throw new Error(errorData.error || 'Failed to create bid order');
+
+      console.log('📥 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      });
+
+      if (response.data.success) {
+        console.log('✅ Bid order created successfully:', response.data);
+        return response.data;
+      } else {
+        console.error('❌ API returned success: false:', response.data);
+        throw new Error(response.data.error || 'Failed to create bid order');
       }
-      
-      const data = await response.json();
-      console.log('✅ API Success Response:', data);
-      return data;
-    } catch (err) {
+
+    } catch (error) {
       console.error('💥 createBidOrder Error Details:', {
-        message: err.message,
-        stack: err.stack,
-        name: err.name
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status
       });
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+
+      if (error.response) {
+        console.error('📥 Response status:', error.response.status);
+        console.error('📥 Response headers:', error.response.headers);
+        console.error('❌ API Error Response:', error.response.data);
+      }
+
+      throw error;
     }
   };
 
@@ -174,77 +193,109 @@ export const BidProvider = ({ children }) => {
     try {
       console.log('🎯 Starting placeBid...', { auctionId, amount, location });
       
-      // Step 1: Create bid order
-      console.log('📋 Step 1: Creating bid order...');
-      const orderResult = await createBidOrder(auctionId, amount, location);
-      console.log('📋 Step 1 Result:', orderResult);
-      
-      if (!orderResult.success) {
-        console.error('❌ Bid order creation failed:', orderResult);
-        throw new Error('Failed to create bid order');
+      // Check if user is authenticated
+      if (!user) {
+        console.error('❌ User not authenticated in placeBid');
+        throw new Error('User not authenticated');
       }
+      console.log('✅ User authenticated:', user.id);
 
-      // Step 2: Initialize Razorpay Checkout
-      console.log('💳 Step 2: Initializing Razorpay...');
-      console.log('🔑 Razorpay Key ID:', process.env.REACT_APP_RAZORPAY_KEY_ID);
-      console.log('📊 Order Result:', orderResult);
-      
+      // Check if auctionId is valid
+      if (!auctionId || auctionId === 'undefined') {
+        console.error('❌ Invalid auctionId:', auctionId);
+        throw new Error('Invalid auction ID');
+      }
+      console.log('✅ AuctionId valid:', auctionId);
+
+      // Check if amount is valid
+      if (!amount || amount <= 0) {
+        console.error('❌ Invalid amount:', amount);
+        throw new Error('Invalid bid amount');
+      }
+      console.log('✅ Amount valid:', amount);
+
+      // Create bid order
+      console.log('🔄 Creating bid order...');
+      const orderResult = await createBidOrder(auctionId, amount, location);
+      console.log('✅ Bid order created:', orderResult);
+
+      // Check if orderResult has the expected structure
+      if (!orderResult.razorpay_order || !orderResult.razorpay_order.id) {
+        console.error('❌ Invalid orderResult structure:', orderResult);
+        throw new Error('Invalid order result from server');
+      }
+      console.log('✅ OrderResult structure valid:', {
+        orderId: orderResult.razorpay_order.id,
+        amount: orderResult.razorpay_order.amount,
+        currency: orderResult.razorpay_order.currency
+      });
+
+      // Prepare Razorpay options
+      const razorpayAmount = Math.round(orderResult.razorpay_order.amount * 100);
+      console.log('💰 Razorpay amount calculation:', {
+        originalAmount: orderResult.razorpay_order.amount,
+        convertedToPaise: razorpayAmount
+      });
+
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: Math.round(orderResult.razorpay_order.amount * 100), // Convert rupees to paise for Razorpay
+        amount: razorpayAmount,
         currency: orderResult.razorpay_order.currency,
         name: 'Pulasa Auctions',
         description: `Bid of ₹${amount} on auction`,
         order_id: orderResult.razorpay_order.id,
         handler: async function (response) {
+          console.log('🎉 Razorpay payment successful:', response);
           try {
-            console.log('💳 Razorpay Payment Response:', response);
-            
-            // Step 3: Verify payment
-            console.log('🔍 Step 3: Verifying payment...');
-            await verifyPayment(
-              auctionId,
-              response.razorpay_payment_id,
-              response.razorpay_order_id,
-              response.razorpay_signature
-            );
-
+            await verifyPaymentAndBid(response.payment_id, response.order_id, response.signature);
             toast.success('Bid placed successfully!');
-            
-            // Emit socket event for real-time updates
-            if (socket) {
-              socket.emit('bidPlaced', {
-                auctionId,
-                amount,
-                bidder: user.id
-              });
-            }
-
-            // Refresh user bids
-            await fetchUserBids();
-            
-            return { success: true };
           } catch (error) {
-            toast.error('Payment verification failed: ' + error.message);
-            throw error;
+            console.error('❌ Payment verification failed:', error);
+            toast.error('Payment verification failed. Please try again.');
           }
         },
         prefill: {
-          name: user.name,
-          email: user.email,
+          name: user.name || user.username || '',
+          email: user.email || '',
           contact: user.phone || ''
         },
         theme: {
-          color: '#7C3AED'
+          color: '#3B82F6'
         }
       };
 
+      console.log('🔧 Razorpay options prepared:', {
+        key: options.key ? 'Present' : 'Missing',
+        amount: options.amount,
+        currency: options.currency,
+        order_id: options.order_id
+      });
+
+      // Check if Razorpay key is available
+      if (!process.env.REACT_APP_RAZORPAY_KEY_ID) {
+        console.error('❌ REACT_APP_RAZORPAY_KEY_ID not found in environment');
+        throw new Error('Razorpay configuration missing');
+      }
+
+      // Open Razorpay checkout
+      console.log('🚀 Opening Razorpay checkout...');
       const rzp = new window.Razorpay(options);
       rzp.open();
-
+      
+      console.log('✅ Razorpay checkout opened successfully');
       return { success: true, orderId: orderResult.razorpay_order.id };
+
     } catch (error) {
-      toast.error('Failed to place bid: ' + error.message);
+      console.error('💥 placeBid Error Details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        auctionId,
+        amount,
+        location
+      });
+      
+      toast.error(error.message || 'Failed to place bid');
       throw error;
     }
   };
