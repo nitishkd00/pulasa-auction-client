@@ -24,10 +24,10 @@ export const BidProvider = ({ children }) => {
   // Get API base URL from environment
   const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
 
-  // Create bid order for authorization
-  const createBidOrder = async (auctionId, amount, location = '') => {
+  // Create Razorpay order for payment authorization
+  const createRazorpayOrder = async (auctionId, amount, location = '') => {
     try {
-      console.log('🚀 Starting createBidOrder...', { auctionId, amount, location });
+      console.log('🚀 Starting createRazorpayOrder...', { auctionId, amount, location });
       
       // Check if user is authenticated
       if (!user) {
@@ -69,15 +69,15 @@ export const BidProvider = ({ children }) => {
       });
 
       if (response.data.success) {
-        console.log('✅ Bid order created successfully:', response.data);
+        console.log('✅ Razorpay order created successfully:', response.data);
         return response.data;
       } else {
         console.error('❌ API returned success: false:', response.data);
-        throw new Error(response.data.error || 'Failed to create bid order');
+        throw new Error(response.data.error || 'Failed to create Razorpay order');
       }
 
     } catch (error) {
-      console.error('💥 createBidOrder Error Details:', {
+      console.error('💥 createRazorpayOrder Error Details:', {
         message: error.message,
         name: error.name,
         stack: error.stack,
@@ -213,10 +213,10 @@ export const BidProvider = ({ children }) => {
       }
       console.log('✅ Amount valid:', amount);
 
-      // Create bid order
-      console.log('🔄 Creating bid order...');
-      const orderResult = await createBidOrder(auctionId, amount, location);
-      console.log('✅ Bid order created:', orderResult);
+      // Create Razorpay order
+      console.log('🔄 Creating Razorpay order...');
+      const orderResult = await createRazorpayOrder(auctionId, amount, location);
+      console.log('✅ Razorpay order created:', orderResult);
 
       // Check if orderResult has the expected structure
       if (!orderResult.razorpay_order || !orderResult.razorpay_order.id) {
@@ -315,7 +315,7 @@ export const BidProvider = ({ children }) => {
     fetchAuctionBids,
     calculatePlatformFee,
     getTotalAmount,
-    createBidOrder,
+    createRazorpayOrder,
     verifyPayment
   };
 

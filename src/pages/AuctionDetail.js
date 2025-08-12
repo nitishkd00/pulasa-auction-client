@@ -19,7 +19,7 @@ const AuctionDetail = () => {
 
   const { user } = useAuth();
   const { fetchAuctionById } = useAuction();
-  const { createBidOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
+  const { createRazorpayOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();
 
   const [auction, setAuction] = useState(null);
@@ -184,7 +184,7 @@ const AuctionDetail = () => {
       setError(null);
       
       console.log('🔄 Calling createBidOrder...');
-      await createBidOrder(auction._id, parseFloat(bidAmount));
+      await createRazorpayOrder(auction._id, parseFloat(bidAmount));
       
       console.log('✅ Bid order created successfully');
       setBidAmount('');
