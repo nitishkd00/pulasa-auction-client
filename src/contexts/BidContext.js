@@ -247,7 +247,7 @@ export const BidProvider = ({ children }) => {
         handler: async function (response) {
           console.log('🎉 Razorpay payment successful:', response);
           try {
-            await verifyPaymentAndBid(response.payment_id, response.order_id, response.signature);
+            await verifyPayment(response.payment_id, response.order_id, response.signature);
             toast.success('Bid placed successfully!');
           } catch (error) {
             console.error('❌ Payment verification failed:', error);
