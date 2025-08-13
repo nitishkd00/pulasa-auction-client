@@ -13,6 +13,13 @@
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Pulasa Auction - Premium Fish Auctions</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      // Runtime configuration injection for Razorpay
+      window.__RAZORPAY_CONFIG__ = {
+        key_id: 'rzp_live_Ief6xMAHvbRgj0'
+      };
+      console.log('🔧 Razorpay runtime config injected:', window.__RAZORPAY_CONFIG__);
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

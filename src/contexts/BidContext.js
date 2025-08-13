@@ -34,6 +34,7 @@ export const BidProvider = ({ children }) => {
         console.error('❌ User not authenticated');
         throw new Error('User not authenticated');
       }
+      console.log('✅ User authenticated:', user.id);
 
       // Check if auth token exists
       const token = localStorage.getItem('pulasa_ecommerce_token');
@@ -70,6 +71,7 @@ export const BidProvider = ({ children }) => {
 
       if (response.data.success) {
         console.log('✅ Razorpay order created successfully:', response.data);
+        console.log('🔍 Order details:', response.data.razorpay_order);
         return response.data;
       } else {
         console.error('❌ API returned success: false:', response.data);
@@ -96,7 +98,7 @@ export const BidProvider = ({ children }) => {
   };
 
   // Verify payment authorization
-  const verifyPayment = async (paymentId, orderId, signature) => {
+  const verifyPayment = async (paymentId, orderId, signature, auctionId, amount, location = '') => {
     try {
       setLoading(true);
       setError(null);
@@ -110,7 +112,10 @@ export const BidProvider = ({ children }) => {
         body: JSON.stringify({
           payment_id: paymentId,
           order_id: orderId,
-          signature: signature
+          signature: signature,
+          auction_id: auctionId,
+          amount: amount,
+          location: location
         })
       });
       
@@ -236,18 +241,44 @@ export const BidProvider = ({ children }) => {
         convertedToPaise: razorpayAmount
       });
 
+      // Check if Razorpay key is available
+      console.log('🔍 Environment check:');
+      console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+      console.log('🔍 REACT_APP_RAZORPAY_KEY_ID:', process.env.REACT_APP_RAZORPAY_KEY_ID);
+      console.log('🔍 All env vars with RAZORPAY:', Object.keys(process.env).filter(key => key.includes('RAZORPAY')));
+      
+      // Try to get the key from different sources
+      let razorpayKey = process.env.REACT_APP_RAZORPAY_KEY_ID;
+      
+      // If not found in process.env, try to get from window object (for runtime injection)
+      if (!razorpayKey && window.__RAZORPAY_CONFIG__) {
+        razorpayKey = window.__RAZORPAY_CONFIG__.key_id;
+        console.log('🔍 Found Razorpay key from window.__RAZORPAY_CONFIG__');
+      }
+      
+      if (!razorpayKey) {
+        console.error('❌ REACT_APP_RAZORPAY_KEY_ID not found in environment');
+        console.error('🔍 Available env vars:', Object.keys(process.env).filter(key => key.includes('RAZORPAY')));
+        console.error('🔍 Window config:', window.__RAZORPAY_CONFIG__);
+        throw new Error('Razorpay configuration missing. Please check environment variables.');
+      }
+
+      console.log('🔑 Razorpay Key ID found:', razorpayKey ? 'Present' : 'Missing');
+
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         amount: razorpayAmount,
-        currency: orderResult.razorpay_order.currency,
+        currency: orderResult.razorpay_order.currency || 'INR',
         name: 'Pulasa Auctions',
         description: `Bid of ₹${amount} on auction`,
         order_id: orderResult.razorpay_order.id,
         handler: async function (response) {
           console.log('🎉 Razorpay payment successful:', response);
           try {
-            await verifyPayment(response.payment_id, response.order_id, response.signature);
+            await verifyPayment(response.payment_id, response.order_id, response.signature, auctionId, amount, location);
             toast.success('Bid placed successfully!');
+            // Refresh auction data after successful bid
+            window.location.reload();
           } catch (error) {
             console.error('❌ Payment verification failed:', error);
             toast.error('Payment verification failed. Please try again.');
@@ -260,6 +291,12 @@ export const BidProvider = ({ children }) => {
         },
         theme: {
           color: '#3B82F6'
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Razorpay checkout dismissed');
+            toast.info('Bid placement cancelled');
+          }
         }
       };
 
@@ -270,18 +307,36 @@ export const BidProvider = ({ children }) => {
         order_id: options.order_id
       });
 
-      // Check if Razorpay key is available
-      if (!process.env.REACT_APP_RAZORPAY_KEY_ID) {
-        console.error('❌ REACT_APP_RAZORPAY_KEY_ID not found in environment');
-        throw new Error('Razorpay configuration missing');
+      // Check if Razorpay is loaded
+      console.log('🔍 Razorpay SDK check:');
+      console.log('🔍 window.Razorpay:', typeof window.Razorpay);
+      console.log('🔍 window.Razorpay constructor:', window.Razorpay);
+      
+      if (typeof window.Razorpay === 'undefined') {
+        console.error('❌ Razorpay SDK not loaded');
+        console.error('🔍 Available window objects:', Object.keys(window).filter(key => key.includes('Razorpay')));
+        throw new Error('Razorpay SDK not available. Please refresh the page or check internet connection.');
       }
 
       // Open Razorpay checkout
       console.log('🚀 Opening Razorpay checkout...');
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      console.log('🔧 Final Razorpay options:', options);
       
-      console.log('✅ Razorpay checkout opened successfully');
+      try {
+        const rzp = new window.Razorpay(options);
+        console.log('✅ Razorpay instance created successfully');
+        rzp.open();
+        console.log('✅ Razorpay checkout opened successfully');
+      } catch (rzpError) {
+        console.error('❌ Error opening Razorpay checkout:', rzpError);
+        console.error('❌ Error details:', {
+          name: rzpError.name,
+          message: rzpError.message,
+          stack: rzpError.stack
+        });
+        throw new Error('Failed to open payment gateway. Please try again.');
+      }
+      
       return { success: true, orderId: orderResult.razorpay_order.id };
 
     } catch (error) {

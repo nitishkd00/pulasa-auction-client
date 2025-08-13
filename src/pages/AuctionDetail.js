@@ -19,7 +19,7 @@ const AuctionDetail = () => {
 
   const { user } = useAuth();
   const { fetchAuctionById } = useAuction();
-  const { createRazorpayOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
+  const { placeBid, createRazorpayOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();
 
   const [auction, setAuction] = useState(null);
@@ -183,17 +183,19 @@ const AuctionDetail = () => {
       setBidding(true);
       setError(null);
       
-      console.log('🔄 Calling createBidOrder...');
-      await createRazorpayOrder(auction._id, parseFloat(bidAmount));
+      console.log('🔄 Calling placeBid...');
+      const result = await placeBid(auction._id, parseFloat(bidAmount), '');
       
-      console.log('✅ Bid order created successfully');
-      setBidAmount('');
-      setShowBidForm(false);
-      toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
-      
-      console.log('🔄 Refreshing auction data...');
-      await loadAuctionData();
-      console.log('✅ Auction data refreshed');
+      if (result.success) {
+        console.log('✅ Bid placed successfully');
+        setBidAmount('');
+        setShowBidForm(false);
+        toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+        
+        console.log('🔄 Refreshing auction data...');
+        await loadAuctionData();
+        console.log('✅ Auction data refreshed');
+      }
       
     } catch (err) {
       console.error('💥 confirmBid error:', {
@@ -243,6 +245,61 @@ const AuctionDetail = () => {
     if (days > 0) return `${days}d ${hours}h ${minutes}m`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
+  };
+
+  const testRazorpayConfig = () => {
+    console.log('🧪 Testing Razorpay Configuration...');
+    console.log('🔍 Environment Variables:');
+    console.log('🔍 NODE_ENV:', process.env.NODE_ENV);
+    console.log('🔍 REACT_APP_RAZORPAY_KEY_ID:', process.env.REACT_APP_RAZORPAY_KEY_ID);
+    console.log('🔍 REACT_APP_RAZORPAY_KEY_SECRET:', process.env.REACT_APP_RAZORPAY_KEY_SECRET);
+    
+    // Try to get the key from different sources
+    let razorpayKey = process.env.REACT_APP_RAZORPAY_KEY_ID;
+    
+    // If not found in process.env, try to get from window object (for runtime injection)
+    if (!razorpayKey && window.__RAZORPAY_CONFIG__) {
+      razorpayKey = window.__RAZORPAY_CONFIG__.key_id;
+      console.log('🔍 Found Razorpay key from window.__RAZORPAY_CONFIG__');
+    }
+    
+    console.log('🔍 Razorpay SDK:');
+    console.log('🔍 window.Razorpay:', typeof window.Razorpay);
+    console.log('🔍 window.Razorpay constructor:', window.Razorpay);
+    
+    if (typeof window.Razorpay !== 'undefined') {
+      try {
+        const testOptions = {
+          key: razorpayKey,
+          amount: 100, // 1 rupee test
+          currency: 'INR',
+          name: 'Test Payment',
+          description: 'Test payment for debugging',
+          order_id: 'test_order_' + Date.now(),
+          handler: function(response) {
+            console.log('✅ Test payment successful:', response);
+            toast.success('Test payment successful!');
+          },
+          prefill: {
+            name: 'Test User',
+            email: 'test@example.com'
+          },
+          theme: {
+            color: '#3B82F6'
+          }
+        };
+        
+        console.log('🔧 Test Razorpay options:', testOptions);
+        const rzp = new window.Razorpay(testOptions);
+        rzp.open();
+        console.log('✅ Test Razorpay checkout opened');
+      } catch (error) {
+        console.error('❌ Test Razorpay error:', error);
+        toast.error('Test failed: ' + error.message);
+      }
+    } else {
+      toast.error('Razorpay SDK not loaded');
+    }
   };
 
   if (loading) {
@@ -453,6 +510,23 @@ const AuctionDetail = () => {
               user && !user.is_admin && auction.created_by !== user.id ? (
                 <div className="bg-white p-6 rounded-lg shadow-md">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Your Bid</h3>
+                  
+                  {/* Debug Button - Only show in development */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <button
+                        type="button"
+                        onClick={testRazorpayConfig}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
+                      >
+                        🧪 Test Razorpay Config
+                      </button>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        Use this button to test if Razorpay is properly configured
+                      </p>
+                    </div>
+                  )}
+                  
                   <form onSubmit={handleBid} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
