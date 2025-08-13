@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useAuction } from '../contexts/AuctionContext';
 import { useBid } from '../contexts/BidContext';
 import { useSocket } from '../contexts/SocketContext';
@@ -17,7 +17,7 @@ const AuctionDetail = () => {
     }
   }, [id, navigate]);
 
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const { fetchAuctionById } = useAuction();
   const { placeBid, createRazorpayOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();

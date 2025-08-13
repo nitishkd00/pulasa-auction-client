@@ -1,12 +1,12 @@
 import React, { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { AlertCircle, CheckCircle, XCircle, Clock, TrendingUp, Award, ArrowRight } from 'lucide-react';
 
 const Notifications = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { 
     notifications, 
