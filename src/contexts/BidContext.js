@@ -235,14 +235,14 @@ export const BidProvider = ({ children }) => {
       }
 
       // Validate order result structure
-      if (!orderResult.orderId || !orderResult.amount || !orderResult.currency) {
+      if (!orderResult.razorpay_order || !orderResult.razorpay_order.id || !orderResult.razorpay_order.amount || !orderResult.razorpay_order.currency) {
         console.error('❌ Invalid order result structure:', orderResult);
         throw new Error('Invalid order response from server');
       }
       console.log('✅ OrderResult structure valid:', {
-        orderId: orderResult.orderId,
-        amount: orderResult.amount,
-        currency: orderResult.currency
+        orderId: orderResult.razorpay_order.id,
+        amount: orderResult.razorpay_order.amount,
+        currency: orderResult.razorpay_order.currency
       });
 
       // Calculate amount in paise (Razorpay requirement)
@@ -278,10 +278,10 @@ export const BidProvider = ({ children }) => {
       const options = {
         key: razorpayKey,
         amount: razorpayAmount,
-        currency: orderResult.currency || 'INR',
+        currency: orderResult.razorpay_order.currency || 'INR',
         name: 'Pulasa Auctions',
         description: `Bid of ₹${amount} on auction`,
-        order_id: orderResult.orderId,
+        order_id: orderResult.razorpay_order.id,
         prefill: {
           name: user.name || user.email,
           email: user.email,
