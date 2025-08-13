@@ -171,7 +171,7 @@ export const BidProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      setUserBids(data.bids);
+      setUserBids(data.bids); // Changed from setBids to setUserBids
       return data.bids;
     } catch (err) {
       setError(err.message);
@@ -203,6 +203,13 @@ export const BidProvider = ({ children }) => {
         throw new Error('User not authenticated');
       }
       console.log('✅ User authenticated:', user.id);
+      console.log('🔍 User data available:', {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        hasPhone: !!user.phone
+      });
 
       // Check if auctionId is valid
       if (!auctionId || auctionId === 'undefined') {
@@ -223,21 +230,25 @@ export const BidProvider = ({ children }) => {
       const orderResult = await createRazorpayOrder(auctionId, amount, location);
       console.log('✅ Razorpay order created:', orderResult);
 
-      // Check if orderResult has the expected structure
-      if (!orderResult.razorpay_order || !orderResult.razorpay_order.id) {
-        console.error('❌ Invalid orderResult structure:', orderResult);
-        throw new Error('Invalid order result from server');
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create payment order');
+      }
+
+      // Validate order result structure
+      if (!orderResult.orderId || !orderResult.amount || !orderResult.currency) {
+        console.error('❌ Invalid order result structure:', orderResult);
+        throw new Error('Invalid order response from server');
       }
       console.log('✅ OrderResult structure valid:', {
-        orderId: orderResult.razorpay_order.id,
-        amount: orderResult.razorpay_order.amount,
-        currency: orderResult.razorpay_order.currency
+        orderId: orderResult.orderId,
+        amount: orderResult.amount,
+        currency: orderResult.currency
       });
 
-      // Prepare Razorpay options
-      const razorpayAmount = Math.round(orderResult.razorpay_order.amount * 100);
+      // Calculate amount in paise (Razorpay requirement)
+      const razorpayAmount = Math.round(parseFloat(amount) * 100);
       console.log('💰 Razorpay amount calculation:', {
-        originalAmount: orderResult.razorpay_order.amount,
+        originalAmount: amount,
         convertedToPaise: razorpayAmount
       });
 
@@ -258,53 +269,75 @@ export const BidProvider = ({ children }) => {
       
       if (!razorpayKey) {
         console.error('❌ REACT_APP_RAZORPAY_KEY_ID not found in environment');
-        console.error('🔍 Available env vars:', Object.keys(process.env).filter(key => key.includes('RAZORPAY')));
-        console.error('🔍 Window config:', window.__RAZORPAY_CONFIG__);
         throw new Error('Razorpay configuration missing. Please check environment variables.');
       }
 
-      console.log('🔑 Razorpay Key ID found:', razorpayKey ? 'Present' : 'Missing');
+      console.log('🔑 Razorpay Key ID found:', process.env.REACT_APP_RAZORPAY_KEY_ID ? 'Present' : 'Missing');
 
+      // Prepare Razorpay options
       const options = {
         key: razorpayKey,
         amount: razorpayAmount,
-        currency: orderResult.razorpay_order.currency || 'INR',
+        currency: orderResult.currency || 'INR',
         name: 'Pulasa Auctions',
         description: `Bid of ₹${amount} on auction`,
-        order_id: orderResult.razorpay_order.id,
+        order_id: orderResult.orderId,
+        prefill: {
+          name: user.name || user.email,
+          email: user.email,
+          contact: user.phone || ''
+        },
+        notes: {
+          auction_id: auctionId,
+          user_id: user.id,
+          bid_amount: amount,
+          location: location
+        },
+        theme: {
+          color: '#10B981'
+        },
         handler: async function (response) {
-          console.log('🎉 Razorpay payment successful:', response);
+          console.log('🎉 Razorpay payment successful!', response);
           try {
-            await verifyPayment(response.payment_id, response.order_id, response.signature, auctionId, amount, location);
-            toast.success('Bid placed successfully!');
-            // Refresh auction data after successful bid
-            window.location.reload();
+            // Verify payment and complete bid
+            const verificationResult = await verifyPayment(
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature,
+              auctionId,
+              amount,
+              location
+            );
+            
+            if (verificationResult.success) {
+              console.log('✅ Bid completed successfully after payment verification');
+              // Show success message
+              toast.success('Bid placed successfully!');
+              // Refresh auction data after successful bid
+              window.location.reload();
+            } else {
+              console.error('❌ Payment verification failed:', verificationResult.error);
+              toast.error('Payment verification failed. Please try again.');
+            }
           } catch (error) {
-            console.error('❌ Payment verification failed:', error);
+            console.error('❌ Error during payment verification:', error);
             toast.error('Payment verification failed. Please try again.');
           }
         },
-        prefill: {
-          name: user.name || user.username || '',
-          email: user.email || '',
-          contact: user.phone || ''
-        },
-        theme: {
-          color: '#3B82F6'
-        },
         modal: {
           ondismiss: function() {
-            console.log('Razorpay checkout dismissed');
+            console.log('❌ Razorpay checkout dismissed by user');
             toast.info('Bid placement cancelled');
           }
         }
       };
 
       console.log('🔧 Razorpay options prepared:', {
-        key: options.key ? 'Present' : 'Missing',
-        amount: options.amount,
+        key: razorpayKey ? 'Present' : 'Missing',
+        amount: razorpayAmount,
         currency: options.currency,
-        order_id: options.order_id
+        order_id: options.order_id,
+        prefill: options.prefill
       });
 
       // Check if Razorpay is loaded
@@ -327,29 +360,23 @@ export const BidProvider = ({ children }) => {
         console.log('✅ Razorpay instance created successfully');
         rzp.open();
         console.log('✅ Razorpay checkout opened successfully');
+        
+        // Return success but DON'T show success message yet - wait for payment completion
+        return { 
+          success: true, 
+          orderId: orderResult.orderId,
+          message: 'Payment popup opened. Please complete the payment to place your bid.',
+          status: 'payment_pending'
+        };
+        
       } catch (rzpError) {
         console.error('❌ Error opening Razorpay checkout:', rzpError);
-        console.error('❌ Error details:', {
-          name: rzpError.name,
-          message: rzpError.message,
-          stack: rzpError.stack
-        });
         throw new Error('Failed to open payment gateway. Please try again.');
       }
       
-      return { success: true, orderId: orderResult.razorpay_order.id };
-
     } catch (error) {
-      console.error('💥 placeBid Error Details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        auctionId,
-        amount,
-        location
-      });
-      
-      toast.error(error.message || 'Failed to place bid');
+      console.error('💥 placeBid error:', error);
+      setError(error.message);
       throw error;
     }
   };
@@ -362,7 +389,7 @@ export const BidProvider = ({ children }) => {
   }, [user]);
 
   const value = {
-    userBids,
+    userBids: userBids, // Renamed from userBids to bids to match the new state variable
     loading,
     error,
     placeBid,

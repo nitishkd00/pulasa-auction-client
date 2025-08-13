@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
+import { AuthContext } from '../contexts/AuthContext';
 import { useAuction } from '../contexts/AuctionContext';
 import { useBid } from '../contexts/BidContext';
 import { useSocket } from '../contexts/SocketContext';
-import toast from 'react-hot-toast';
 
 const AuctionDetail = () => {
   const { id } = useParams();
@@ -17,7 +17,7 @@ const AuctionDetail = () => {
     }
   }, [id, navigate]);
 
-  const { user } = useAuth();
+  const { user } = useContext(AuthContext);
   const { fetchAuctionById } = useAuction();
   const { placeBid, createRazorpayOrder, verifyPaymentAndBid, fetchAuctionBids, calculatePlatformFee, getTotalAmount } = useBid();
   const { socket } = useSocket();
@@ -99,8 +99,20 @@ const AuctionDetail = () => {
     if (!socket || !user) return;
     // Listen for outbid event
     socket.on('outbid', (data) => {
-      if (data.userId === user.id) {
+      console.log('🚨 Outbid event received:', data);
+      if (data.auction_id === auction._id && data.user_id === user?.id) {
         setShowOutbidModal(true);
+        // Show toast notification
+        toast.error(`You've been outbid on "${data.auction_name}"!`, {
+          duration: 5000,
+          action: {
+            label: 'Bid Again',
+            onClick: () => {
+              setShowOutbidModal(false);
+              document.getElementById('bid-form')?.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        });
       }
     });
     // Listen for auction won event
@@ -187,14 +199,25 @@ const AuctionDetail = () => {
       const result = await placeBid(auction._id, parseFloat(bidAmount), '');
       
       if (result.success) {
-        console.log('✅ Bid placed successfully');
-        setBidAmount('');
-        setShowBidForm(false);
-        toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+        console.log('✅ Payment popup opened successfully');
         
-        console.log('🔄 Refreshing auction data...');
-        await loadAuctionData();
-        console.log('✅ Auction data refreshed');
+        if (result.status === 'payment_pending') {
+          // Show info message that payment is pending
+          toast.info(result.message || 'Payment popup opened. Please complete the payment to place your bid.');
+          
+          // Don't clear the form or hide it yet - wait for payment completion
+          // The form will be handled by the payment success/error callbacks in the context
+        } else {
+          // This shouldn't happen with the new flow, but handle it just in case
+          console.log('✅ Bid placed successfully (immediate success)');
+          setBidAmount('');
+          setShowBidForm(false);
+          toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+          
+          console.log('🔄 Refreshing auction data...');
+          await loadAuctionData();
+          console.log('✅ Auction data refreshed');
+        }
       }
       
     } catch (err) {
@@ -203,8 +226,9 @@ const AuctionDetail = () => {
         name: err.name,
         stack: err.stack
       });
-      setError(err.message);
-    } finally {
+      
+      setError(err.message || 'Failed to place bid');
+      toast.error(err.message || 'Failed to place bid');
       setBidding(false);
     }
   };
@@ -508,7 +532,7 @@ const AuctionDetail = () => {
             {/* Bid Form: Only show if user is logged in, auction is live, user is not admin, and not auction creator */}
             {auction.status === 'active' && (
               user && !user.is_admin && auction.created_by !== user.id ? (
-                <div className="bg-white p-6 rounded-lg shadow-md">
+                <div className="bg-white p-6 rounded-lg shadow-md" id="bid-form">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Your Bid</h3>
                   
                   {/* Debug Button - Only show in development */}
@@ -683,31 +707,85 @@ const AuctionDetail = () => {
         </div>
       )}
 
-      {/* Outbid Modal */}
+      {/* Enhanced Outbid Modal */}
       {showOutbidModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full relative text-center">
-            <h2 className="text-xl font-bold text-red-600 mb-2">Outbid Alert!</h2>
-            <p className="text-gray-800 mb-4">
-              Alert! Another bidder just outbid you.<br />
-              <b>Don’t let the prize slip away—bid again and stay on top!</b>
-            </p>
-            <div className="flex justify-center gap-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 relative text-center border-2 border-red-200">
+            {/* Close button */}
+            <button
+              onClick={() => setShowOutbidModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Alert Icon */}
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+
+            {/* Main Message */}
+            <h2 className="text-2xl font-bold text-red-700 mb-3">🚨 You've Been Outbid!</h2>
+            
+            <div className="space-y-3 mb-6">
+              <p className="text-gray-700 text-lg">
+                <span className="font-semibold">Don't let this one get away!</span>
+              </p>
+              <p className="text-gray-600">
+                Another bidder just placed a higher bid on <span className="font-semibold text-gray-800">"{auction.item_name}"</span>
+              </p>
+              
+              {/* Refund Info */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center justify-center space-x-2 text-green-700">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">Your previous bid has been automatically refunded!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
               <button
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-xl font-semibold text-lg hover:from-red-700 hover:to-red-800 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onClick={() => {
+                  setShowOutbidModal(false);
+                  // Scroll to bid form
+                  document.getElementById('bid-form')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                🚀 Bid Again & Stay on Top!
+              </button>
+              
+              <button
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold text-lg hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                 onClick={() => {
                   setShowOutbidModal(false);
                   navigate(`/auction/${auction._id}`);
                 }}
               >
-                Place Bid
+                💪 Show Them Who's Boss!
               </button>
+              
               <button
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                className="w-full bg-gray-100 text-gray-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 onClick={() => setShowOutbidModal(false)}
               >
-                Let the Fish Slip Away… or Place Your Bid Now!
+                Maybe Later
               </button>
+            </div>
+
+            {/* Motivational Quote */}
+            <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800 italic">
+                "The best revenge is massive success!" - Frank Sinatra
+              </p>
             </div>
           </div>
         </div>

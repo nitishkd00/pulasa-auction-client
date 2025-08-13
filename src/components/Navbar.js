@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { Fish, Menu, X, AlertCircle, ArrowRight, ExternalLink, ArrowLeft } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
   const handleGoToMainSite = () => {
@@ -47,6 +49,22 @@ const Navbar = () => {
               </Link>
             )}
           </div>
+
+          {/* Notification Bell - Only show for logged-in users */}
+          {user && (
+            <div className="hidden md:flex items-center">
+              <Link 
+                to="/notifications" 
+                className="relative p-2 text-gray-600 hover:text-orange-700 transition-colors"
+              >
+                <AlertCircle size={24} />
+                {/* Notification Badge */}
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {unreadCount}
+                </span>
+              </Link>
+            </div>
+          )}
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
@@ -116,6 +134,23 @@ const Navbar = () => {
                   My Bids
                 </Link>
               )}
+              {/* Mobile Notification Link */}
+              {user && (
+                <Link
+                  to="/notifications"
+                  className="block px-3 py-2 text-gray-600 hover:text-orange-700 transition-colors font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle size={20} />
+                    <span>Notifications</span>
+                    <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                      {unreadCount}
+                    </span>
+                  </div>
+                </Link>
+              )}
+              {/* Mobile User Section */}
               {user ? (
                 <div className="px-3 py-2">
                   <span className="text-gray-700 font-medium">
@@ -127,7 +162,7 @@ const Navbar = () => {
                   >
                     <ArrowLeft size={20} />
                     <span>Back to Pulasa</span>
-                </button>
+                  </button>
                 </div>
               ) : (
                 <button

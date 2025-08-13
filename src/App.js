@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { AuctionProvider } from './contexts/AuctionContext';
 import { BidProvider } from './contexts/BidContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -21,6 +22,7 @@ import AuctionDetail from './pages/AuctionDetail';
 import CreateAuction from './pages/CreateAuction';
 import Profile from './pages/Profile';
 import MyBids from './pages/MyBids';
+import Notifications from './pages/Notifications';
 import AdminDashboard from './pages/AdminDashboard';
 import Terms from './pages/Terms';
 
@@ -86,6 +88,14 @@ const AppContent = () => {
             } 
           />
           <Route 
+            path="/notifications" 
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin" 
             element={
               <ProtectedRoute requireAdmin={true}>
@@ -122,6 +132,7 @@ const App = () => {
       <SocketProvider>
         <AuctionProvider>
           <BidProvider>
+            <NotificationProvider>
               <AppContent />
               <Toaster
                 position="top-right"
@@ -147,6 +158,7 @@ const App = () => {
                   },
                 }}
               />
+            </NotificationProvider>
           </BidProvider>
         </AuctionProvider>
       </SocketProvider>
