@@ -601,14 +601,14 @@ const AuctionDetail = () => {
                    
                    {/* Transaction Fee Information */}
                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                     <h4 className="text-sm font-medium text-blue-900 mb-2">💰 Transaction Fee Structure</h4>
+                     <h4 className="text-sm font-medium text-blue-900 mb-2">Transaction Fee Structure</h4>
                      <div className="text-xs text-blue-800 space-y-1">
                        <div>• Bid Amount ₹0 - ₹1000: ₹7.99 fee</div>
                        <div>• Bid Amount ₹1001 - ₹25000: ₹11.99 fee</div>
                        <div>• Bid Amount ₹25001+: ₹14.99 fee</div>
                      </div>
                      <p className="text-xs text-blue-700 mt-2 italic">
-                       Fee covers Razorpay processing charges and is non-refundable
+                       This transaction fee covers Razorpay's instant refund processing charges when you get outbid by another user and is non-refundable
                      </p>
                    </div>
                   
