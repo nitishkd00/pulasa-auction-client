@@ -171,6 +171,15 @@ const AuctionDetail = () => {
         console.log('Setting recent bids:', recentBidsArray);
         setRecentBids(recentBidsArray); // Show last 5 bids as recent
         
+        // Update auction total_bids count based on actual bids
+        if (auction && auction.total_bids !== bidsData.bids.length) {
+          setAuction(prev => ({
+            ...prev,
+            total_bids: bidsData.bids.length
+          }));
+          console.log('🔢 Updated auction total_bids to:', bidsData.bids.length);
+        }
+        
         // Filter bid history to show only current user's bids
         if (user) {
           console.log('User ID:', user.id, 'User _id:', user._id);
@@ -265,13 +274,13 @@ const AuctionDetail = () => {
         } else {
           // This shouldn't happen with the new flow, but handle it just in case
           console.log('✅ Bid placed successfully (immediate success)');
-          setBidAmount('');
-          setShowBidForm(false);
-          toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
-          
-          console.log('🔄 Refreshing auction data...');
-          await loadAuctionData();
-          console.log('✅ Auction data refreshed');
+      setBidAmount('');
+      setShowBidForm(false);
+      toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+      
+      console.log('🔄 Refreshing auction data...');
+      await loadAuctionData();
+      console.log('✅ Auction data refreshed');
         }
       }
       
@@ -699,27 +708,13 @@ const AuctionDetail = () => {
           </div>
         </div>
 
-                 {/* Recent Bids - Public (visible to everyone) */}
-         <div className="mt-12">
-           <div className="flex items-center justify-between mb-6">
-             <h2 className="text-2xl font-bold text-gray-900">Recent Bids</h2>
-             <button
-               onClick={loadBidsData}
-               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-             >
-               🔄 Refresh
-             </button>
-           </div>
+        {/* Recent Bids - Public (visible to everyone) */}
+        <div className="mt-12">
+                     <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Recent Bids</h2>
+          </div>
            
-           {/* Debug Info - Remove this after fixing */}
-           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-xs">
-             <div><strong>Debug Info:</strong></div>
-             <div>Total bids in state: {bids.length}</div>
-             <div>Recent bids count: {recentBids.length}</div>
-             <div>Bid history count: {bidHistory.length}</div>
-             <div>User authenticated: {user ? 'Yes' : 'No'}</div>
-             {user && <div>User ID: {user.id || user._id || 'Unknown'}</div>}
-           </div>
+           
            
            {bidsLoading ? (
                <div className="text-center py-4">
@@ -727,33 +722,27 @@ const AuctionDetail = () => {
                  <p className="text-gray-500 mt-2">Updating bids...</p>
                </div>
              ) : recentBids.length === 0 ? (
-               <div className="text-gray-500">No recent bids yet.</div>
-             ) : (
-             recentBids.map((bid, idx) => (
-               <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
-                       <div>
+            <div className="text-gray-500">No recent bids yet.</div>
+          ) : (
+            recentBids.map((bid, idx) => (
+              <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
+                      <div>
                    <div className="font-semibold">{bid.bidder?.username || bid.bidder?.name || 'Unknown User'}</div>
-                   <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
-                   {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
-                       </div>
-                 <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
-               </div>
-             ))
-             )}
-         </div>
+                  <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
+                  {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
+                      </div>
+                <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
+              </div>
+            ))
+            )}
+        </div>
 
         {/* Bid History - Only for logged-in users */}
         {user && (
           <div className="mt-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Your Bid History</h2>
-              <button
-                onClick={loadBidsData}
-                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-              >
-                🔄 Refresh
-              </button>
-            </div>
+                      <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Your Bid History</h2>
+          </div>
             {bidsLoading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
@@ -762,16 +751,16 @@ const AuctionDetail = () => {
             ) : bidHistory.length === 0 ? (
               <div className="text-gray-500">No bid history yet.</div>
             ) : (
-                             bidHistory.map((bid, idx) => (
-                 <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
-                         <div>
+              bidHistory.map((bid, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
+                        <div>
                      <div className="font-semibold">{bid.bidder?.username || bid.bidder?.name || 'Unknown User'}</div>
-                     <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
-                     {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
-                         </div>
-                   <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
-                 </div>
-               ))
+                    <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
+                    {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
+                        </div>
+                  <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
+                </div>
+              ))
               )}
           </div>
         )}

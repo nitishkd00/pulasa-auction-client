@@ -242,48 +242,48 @@ const AdminDashboard = () => {
           <div className="space-y-8">
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
                     <TrendingUp className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
+              </div>
+              <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                     <p className="text-2xl font-semibold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
-                  </div>
-                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
                     <Users className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div className="ml-4">
+              </div>
+              <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Active Users</p>
                     <p className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</p>
-                  </div>
-                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
                     <DollarSign className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Bids</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats.totalBids}</p>
-                  </div>
-                </div>
               </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Bids</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.totalBids}</p>
+              </div>
+            </div>
+          </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
                   <div className="p-2 bg-red-100 rounded-lg">
                     <AlertCircle className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div className="ml-4">
+              </div>
+              <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Total Refunds</p>
                     <p className="text-2xl font-semibold text-gray-900">{formatCurrency(stats.refundAmount)}</p>
                   </div>
@@ -307,11 +307,11 @@ const AdminDashboard = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Active Auctions:</span>
                     <span className="font-semibold">{stats.activeAuctions}</span>
-                  </div>
-                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -325,9 +325,9 @@ const AdminDashboard = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Ending Soon:</span>
                     <span className="font-semibold">{auctions.filter(a => a.status === 'active' && new Date(a.end_time) < new Date(Date.now() + 24*60*60*1000)).length}</span>
-                  </div>
-                </div>
               </div>
+              </div>
+            </div>
             </div>
           </div>
         )}
@@ -366,48 +366,48 @@ const AdminDashboard = () => {
                   <Download size={16} />
                   <span>Export Bids</span>
                 </button>
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Bids Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">All Bids ({filteredBids.length})</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
                     {filteredBids.map((bid) => (
                       <tr key={bid._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
                             <div className="text-sm font-medium text-gray-900">
                               {bid.bidder?.username || 'Unknown'}
-                            </div>
-                          </div>
-                        </td>
+                        </div>
+                      </div>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{bid.auction?.item_name || 'Unknown'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-gray-900">{formatCurrency(bid.amount)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBidStatusBadge(bid.status, bid.payment_status)}`}>
                             {bid.status.charAt(0).toUpperCase() + bid.status.slice(1)}
                           </span>
-                        </td>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             bid.payment_status === 'refunded' ? 'bg-orange-100 text-orange-800' :
@@ -416,19 +416,19 @@ const AdminDashboard = () => {
                           }`}>
                             {bid.payment_status.charAt(0).toUpperCase() + bid.payment_status.slice(1)}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(bid.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button className="text-blue-600 hover:text-blue-900">View Details</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
           </div>
         )}
 
@@ -448,13 +448,13 @@ const AdminDashboard = () => {
                   </button>
 
                 </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Bid</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Amount</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
@@ -562,17 +562,17 @@ const AdminDashboard = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Bid</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bids</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Time</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
                     {auctions.map((auction) => (
                       <tr key={auction._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img 
                               src={auction.item_image} 
@@ -584,32 +584,32 @@ const AdminDashboard = () => {
                               <div className="text-sm text-gray-500">Base: {formatCurrency(auction.base_price)}</div>
                             </div>
                           </div>
-                        </td>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(auction.status)}
-                        </td>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-gray-900">
                             {auction.highest_bid ? formatCurrency(auction.highest_bid) : 'No bids'}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{auction.total_bids || 0}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(auction.end_time)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
                           <button className="text-red-600 hover:text-red-900">Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+        </div>
+      </div>
         )}
       </div>
 
