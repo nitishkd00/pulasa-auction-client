@@ -11,6 +11,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthTransferHandler from './components/AuthTransferHandler';
+import FishLoadingIcon from './components/FishLoadingIcon';
 
 // Debug utilities
 import './utils/BrowserDebugger';
@@ -33,7 +34,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-700"></div>
+        <FishLoadingIcon size="md" />
       </div>
     );
   }
@@ -56,7 +57,7 @@ const AppContent = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-700"></div>
+        <FishLoadingIcon size="md" />
       </div>
     );
   }

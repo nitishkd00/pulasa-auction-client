@@ -16,6 +16,7 @@ import {
   RefreshCw,
 
 } from 'lucide-react';
+import FishLoadingIcon from '../components/FishLoadingIcon';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -175,8 +176,8 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg">Loading comprehensive admin dashboard...</p>
+          <FishLoadingIcon size="lg" />
+          <p className="mt-4 text-lg">Fishing for admin data...</p>
         </div>
       </div>
     );

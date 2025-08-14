@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAuction } from '../contexts/AuctionContext';
 import { useBid } from '../contexts/BidContext';
 import { useSocket } from '../contexts/SocketContext';
+import FishLoadingIcon from '../components/FishLoadingIcon';
 
 const AuctionDetail = () => {
   const { id } = useParams();
@@ -743,8 +744,8 @@ const AuctionDetail = () => {
            
            {bidsLoading ? (
                <div className="text-center py-4">
-                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                 <p className="text-gray-500 mt-2">Updating bids...</p>
+                 <FishLoadingIcon size="sm" />
+                 <p className="text-gray-500 mt-2">Fishing for recent bids...</p>
                </div>
              ) : recentBids.length === 0 ? (
             <div className="text-gray-500">No recent bids yet.</div>
@@ -770,8 +771,8 @@ const AuctionDetail = () => {
             </div>
             {bidsLoading ? (
               <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Updating bid history...</p>
+                <FishLoadingIcon size="sm" />
+                <p className="text-gray-500 mt-2">Fishing for bid history...</p>
               </div>
             ) : bidHistory.length === 0 ? (
               <div className="text-gray-500">No bid history yet.</div>

@@ -330,8 +330,7 @@ export const BidProvider = ({ children }) => {
         notes: {
           auction_id: auctionId,
           user_id: user.id,
-          bid_amount: amount,
-          location: location
+          bid_amount: amount
         },
         theme: {
           color: '#10B981'
