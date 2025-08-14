@@ -111,12 +111,16 @@ const CreateAuction = () => {
       const startTimeISO = startTime.toISOString();
       const endTimeISO = endTime.toISOString();
       
-      const response = await axios.post(`${apiBaseUrl}/api/auction/create`, {
+      const requestData = {
         ...formData,
         start_time: startTimeISO,
         end_time: endTimeISO,
         base_price: parseFloat(formData.base_price)
-      }, {
+      };
+      
+      console.log('Sending auction data:', requestData);
+      
+      const response = await axios.post(`${apiBaseUrl}/api/auction/create`, requestData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -126,7 +130,15 @@ const CreateAuction = () => {
       navigate(`/auction/${response.data.auction.id}`);
     } catch (error) {
       console.error('Create auction error:', error);
-      const message = error.response?.data?.error || 'Failed to create auction';
+      console.error('Error response:', error.response?.data);
+      
+      let message = 'Failed to create auction';
+      if (error.response?.data?.details) {
+        message = error.response.data.details;
+      } else if (error.response?.data?.error) {
+        message = error.response.data.error;
+      }
+      
       toast.error(message);
     } finally {
       setLoading(false);

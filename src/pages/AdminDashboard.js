@@ -13,7 +13,8 @@ import {
   Download,
   Filter,
   Search,
-  RefreshCw
+  RefreshCw,
+
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -24,6 +25,7 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
 
   // Dashboard Data
   const [stats, setStats] = useState({
@@ -179,6 +181,8 @@ const AdminDashboard = () => {
       </div>
     );
   }
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -434,13 +438,16 @@ const AdminDashboard = () => {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Refund Details ({refunds.length})</h3>
-                <button
-                  onClick={() => exportData('refunds')}
-                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                >
-                  <Download size={16} />
-                  <span>Export Refunds</span>
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => exportData('refunds')}
+                    className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                  >
+                    <Download size={16} />
+                    <span>Export Refunds</span>
+                  </button>
+
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -605,6 +612,8 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+
     </div>
   );
 };

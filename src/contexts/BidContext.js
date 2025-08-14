@@ -145,7 +145,7 @@ export const BidProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      return data.bids;
+      return data; // Return the full response object
     } catch (err) {
       console.error('Fetch auction bids error:', err);
       throw err;

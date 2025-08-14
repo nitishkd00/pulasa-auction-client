@@ -36,6 +36,7 @@ const AuctionDetail = () => {
   const [endTimeLoading, setEndTimeLoading] = useState(false);
   const [recentBids, setRecentBids] = useState([]);
   const [bidHistory, setBidHistory] = useState([]);
+  const [bidsLoading, setBidsLoading] = useState(false);
   const [showOutbidModal, setShowOutbidModal] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
 
@@ -61,13 +62,9 @@ const AuctionDetail = () => {
     // Listen for new bids
     socket.on('newBid', (bidData) => {
       if (bidData.auction_id === id) {
+        console.log('🔄 New bid received, updating auction data...');
+        // Update auction data and bids
         loadAuctionData();
-        if (id && id !== 'undefined') {
-          fetchAuctionBids(id).then(data => {
-            setBids(data.bids || []);
-            console.log('Bids after real-time update:', (data.bids || []).length);
-          });
-        }
       }
     });
 
@@ -121,9 +118,19 @@ const AuctionDetail = () => {
         setShowWinnerModal(true);
       }
     });
+    // Listen for new bid events to update bids in real-time
+    socket.on('newBid', (bidData) => {
+      console.log('🔄 New bid received:', bidData);
+      if (bidData.auction_id === id) {
+        console.log('🔄 New bid for this auction, updating bids data...');
+        // Update auction data and bids
+        loadAuctionData();
+      }
+    });
     return () => {
       socket.off('outbid');
       socket.off('auctionWon');
+      socket.off('newBid');
     };
   }, [socket, user, id]);
 
@@ -137,15 +144,63 @@ const AuctionDetail = () => {
       }
       const auctionData = await fetchAuctionById(id);
       console.log('Auction data received:', auctionData);
-      console.log('Recent bids:', auctionData.recent_bids);
-      console.log('Bid history:', auctionData.bid_history);
       setAuction(auctionData.auction);
-      setRecentBids(auctionData.recent_bids || []);
-      setBidHistory(auctionData.bid_history || []);
+      
+      // Load bids separately to ensure we have the latest data
+      await loadBidsData();
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBidsData = async () => {
+    try {
+      if (!id || id === 'undefined') return;
+      
+      setBidsLoading(true);
+      const bidsData = await fetchAuctionBids(id);
+      console.log('Bids data received:', bidsData);
+      console.log('Current user:', user);
+      
+      if (bidsData.success && bidsData.bids) {
+        console.log('Raw bids array:', bidsData.bids);
+        setBids(bidsData.bids);
+        const recentBidsArray = bidsData.bids.slice(0, 5);
+        console.log('Setting recent bids:', recentBidsArray);
+        setRecentBids(recentBidsArray); // Show last 5 bids as recent
+        
+        // Filter bid history to show only current user's bids
+        if (user) {
+          console.log('User ID:', user.id, 'User _id:', user._id);
+          console.log('Sample bid bidder:', bidsData.bids[0]?.bidder);
+          
+          const userBids = bidsData.bids.filter(bid => {
+            console.log('Checking bid:', {
+              bidId: bid._id,
+              bidderId: bid.bidder?._id,
+              bidderIdAlt: bid.bidder?.id,
+              userId: user.id,
+              userIdAlt: user._id,
+              matches: (bid.bidder && (bid.bidder._id === user.id || bid.bidder._id === user._id))
+            });
+            return bid.bidder && (bid.bidder._id === user.id || bid.bidder._id === user._id);
+          });
+          
+          console.log('Filtered user bids:', userBids);
+          setBidHistory(userBids);
+        } else {
+          console.log('No user authenticated');
+          setBidHistory([]);
+        }
+      } else {
+        console.log('No bids data or success false:', bidsData);
+      }
+    } catch (err) {
+      console.error('Error loading bids data:', err);
+    } finally {
+      setBidsLoading(false);
     }
   };
 
@@ -644,42 +699,79 @@ const AuctionDetail = () => {
           </div>
         </div>
 
-        {/* Recent Bids - Public (visible to everyone) */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Bids</h2>
-          {recentBids.length === 0 ? (
-            <div className="text-gray-500">No recent bids yet.</div>
-          ) : (
-            recentBids.map((bid, idx) => (
-              <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
-                      <div>
-                  <div className="font-semibold">{bid.username}</div>
-                  <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
-                  {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
-                      </div>
-                <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
-              </div>
-            ))
-            )}
-        </div>
+                 {/* Recent Bids - Public (visible to everyone) */}
+         <div className="mt-12">
+           <div className="flex items-center justify-between mb-6">
+             <h2 className="text-2xl font-bold text-gray-900">Recent Bids</h2>
+             <button
+               onClick={loadBidsData}
+               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+             >
+               🔄 Refresh
+             </button>
+           </div>
+           
+           {/* Debug Info - Remove this after fixing */}
+           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-xs">
+             <div><strong>Debug Info:</strong></div>
+             <div>Total bids in state: {bids.length}</div>
+             <div>Recent bids count: {recentBids.length}</div>
+             <div>Bid history count: {bidHistory.length}</div>
+             <div>User authenticated: {user ? 'Yes' : 'No'}</div>
+             {user && <div>User ID: {user.id || user._id || 'Unknown'}</div>}
+           </div>
+           
+           {bidsLoading ? (
+               <div className="text-center py-4">
+                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                 <p className="text-gray-500 mt-2">Updating bids...</p>
+               </div>
+             ) : recentBids.length === 0 ? (
+               <div className="text-gray-500">No recent bids yet.</div>
+             ) : (
+             recentBids.map((bid, idx) => (
+               <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
+                       <div>
+                   <div className="font-semibold">{bid.bidder?.username || bid.bidder?.name || 'Unknown User'}</div>
+                   <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
+                   {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
+                       </div>
+                 <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
+               </div>
+             ))
+             )}
+         </div>
 
         {/* Bid History - Only for logged-in users */}
         {user && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Bid History</h2>
-            {bidHistory.length === 0 ? (
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Your Bid History</h2>
+              <button
+                onClick={loadBidsData}
+                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+            {bidsLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Updating bid history...</p>
+              </div>
+            ) : bidHistory.length === 0 ? (
               <div className="text-gray-500">No bid history yet.</div>
             ) : (
-              bidHistory.map((bid, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
-                        <div>
-                    <div className="font-semibold">{bid.username}</div>
-                    <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
-                    {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
-                        </div>
-                  <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
-                </div>
-              ))
+                             bidHistory.map((bid, idx) => (
+                 <div key={idx} className="flex items-center justify-between bg-white rounded-lg shadow p-4 mb-2">
+                         <div>
+                     <div className="font-semibold">{bid.bidder?.username || bid.bidder?.name || 'Unknown User'}</div>
+                     <div className="text-xs text-gray-500">{formatTime(bid.created_at)}</div>
+                     {bid.location && <div className="text-xs text-gray-400">{bid.location}</div>}
+                         </div>
+                   <div className="text-green-600 font-bold text-lg">₹{bid.amount}</div>
+                 </div>
+               ))
               )}
           </div>
         )}
