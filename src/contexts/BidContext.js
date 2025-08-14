@@ -74,6 +74,7 @@ export const BidProvider = ({ children }) => {
         console.log('🔍 Order details:', response.data.razorpay_order);
         
         // Add fee information to the response
+        const totalAmount = getTotalAmount(amount);
         const feeInfo = {
           bid_amount: amount,
           transaction_fee: calculateTransactionFee(amount),
@@ -422,7 +423,7 @@ export const BidProvider = ({ children }) => {
     placeBid,
     fetchUserBids,
     fetchAuctionBids,
-    calculatePlatformFee,
+    calculateTransactionFee,
     getTotalAmount,
     createRazorpayOrder,
     verifyPayment
