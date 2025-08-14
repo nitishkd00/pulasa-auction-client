@@ -25,9 +25,9 @@ export const BidProvider = ({ children }) => {
   const apiBaseUrl = process.env.REACT_APP_AUCTION_SERVER_URL || 'https://auction-api.pulasa.com';
 
   // Create Razorpay order for payment authorization
-  const createRazorpayOrder = async (auctionId, amount, location = '') => {
+  const createRazorpayOrder = async (auctionId, amount) => {
     try {
-      console.log('🚀 Starting createRazorpayOrder...', { auctionId, amount, location });
+      console.log('🚀 Starting createRazorpayOrder...', { auctionId, amount });
       
       // Check if user is authenticated
       if (!user) {
@@ -47,8 +47,7 @@ export const BidProvider = ({ children }) => {
       // Prepare request body
       const requestBody = {
         auction_id: auctionId,
-        amount: amount,
-        location: location || ''
+        amount: amount
       };
       console.log('📤 Request body:', requestBody);
 
@@ -110,10 +109,23 @@ export const BidProvider = ({ children }) => {
   };
 
   // Verify payment authorization
-  const verifyPayment = async (paymentId, orderId, signature, auctionId, amount, location = '') => {
+  const verifyPayment = async (paymentId, orderId, signature, auctionId, amount) => {
     try {
       setLoading(true);
       setError(null);
+      
+      const requestBody = {
+        payment_id: paymentId,
+        order_id: orderId,
+        signature: signature,
+        auction_id: auctionId,
+        amount: amount,
+        transaction_fee: calculateTransactionFee(amount),
+        total_amount: getTotalAmount(amount)
+      };
+      
+      console.log('🔍 verifyPayment called with:', requestBody);
+      console.log('🌐 Sending to:', `${apiBaseUrl}/api/bid/verify`);
       
       const response = await fetch(`${apiBaseUrl}/api/bid/verify`, {
         method: 'POST',
@@ -121,24 +133,23 @@ export const BidProvider = ({ children }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('pulasa_ecommerce_token')}`
         },
-        body: JSON.stringify({
-          payment_id: paymentId,
-          order_id: orderId,
-          signature: signature,
-          auction_id: auctionId,
-          amount: amount,
-          location: location,
-          transaction_fee: calculateTransactionFee(amount),
-          total_amount: getTotalAmount(amount)
-        })
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log('📥 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
       });
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Response not OK. Error data:', errorData);
         throw new Error(errorData.error || 'Failed to verify payment');
       }
       
       const data = await response.json();
+      console.log('✅ Response data:', data);
       return data;
     } catch (err) {
       setError(err.message);
@@ -212,9 +223,9 @@ export const BidProvider = ({ children }) => {
   };
 
   // Place bid using Razorpay
-  const placeBid = async (auctionId, amount, location = '') => {
+  const placeBid = async (auctionId, amount) => {
     try {
-      console.log('🎯 Starting placeBid...', { auctionId, amount, location });
+      console.log('🎯 Starting placeBid...', { auctionId, amount });
       
       // Check if user is authenticated
       if (!user) {
@@ -255,7 +266,7 @@ export const BidProvider = ({ children }) => {
 
       // Create Razorpay order with total amount (bid + fee)
       console.log('🔄 Creating Razorpay order for total amount:', totalAmount);
-      const orderResult = await createRazorpayOrder(auctionId, totalAmount, location);
+      const orderResult = await createRazorpayOrder(auctionId, totalAmount);
       console.log('✅ Razorpay order created:', orderResult);
 
       if (!orderResult.success) {
@@ -273,10 +284,11 @@ export const BidProvider = ({ children }) => {
         currency: orderResult.razorpay_order.currency
       });
 
-      // Calculate amount in paise (Razorpay requirement)
-      const razorpayAmount = Math.round(parseFloat(amount) * 100);
+      // Calculate amount in paise (Razorpay requirement) - Use total amount including fee
+      const razorpayAmount = Math.round(parseFloat(totalAmount) * 100);
       console.log('💰 Razorpay amount calculation:', {
-        originalAmount: amount,
+        bidAmount: amount,
+        totalAmount: totalAmount,
         convertedToPaise: razorpayAmount
       });
 
@@ -326,29 +338,49 @@ export const BidProvider = ({ children }) => {
         },
         handler: async function (response) {
           console.log('🎉 Razorpay payment successful!', response);
+          console.log('🔍 Payment details for verification:', {
+            payment_id: response.razorpay_payment_id,
+            order_id: response.razorpay_order_id,
+            signature: response.razorpay_signature,
+            auction_id: auctionId,
+            bid_amount: amount,
+            transaction_fee: calculateTransactionFee(amount),
+            total_amount: getTotalAmount(amount)
+          });
+          
           try {
+            console.log('🔄 Starting payment verification...');
+            
             // Verify payment and complete bid
             const verificationResult = await verifyPayment(
               response.razorpay_payment_id,
               response.razorpay_order_id,
               response.razorpay_signature,
               auctionId,
-              amount,
-              location
+              amount
             );
+            
+            console.log('📥 Verification result received:', verificationResult);
             
             if (verificationResult.success) {
               console.log('✅ Bid completed successfully after payment verification');
+              console.log('🎯 Final bid result:', verificationResult);
               // Show success message
               toast.success('Bid placed successfully!');
               // Refresh auction data after successful bid
               window.location.reload();
             } else {
               console.error('❌ Payment verification failed:', verificationResult.error);
+              console.error('❌ Full verification result:', verificationResult);
               toast.error('Payment verification failed. Please try again.');
             }
           } catch (error) {
             console.error('❌ Error during payment verification:', error);
+            console.error('❌ Error details:', {
+              message: error.message,
+              name: error.name,
+              stack: error.stack
+            });
             toast.error('Payment verification failed. Please try again.');
           }
         },

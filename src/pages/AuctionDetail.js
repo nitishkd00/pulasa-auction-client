@@ -265,7 +265,7 @@ const AuctionDetail = () => {
       setError(null);
       
       console.log('🔄 Calling placeBid...');
-      const result = await placeBid(auction._id, parseFloat(bidAmount), '');
+              const result = await placeBid(auction._id, parseFloat(bidAmount));
       
       if (result.success) {
         console.log('✅ Payment popup opened successfully');
@@ -734,8 +734,8 @@ const AuctionDetail = () => {
         </div>
 
         {/* Recent Bids - Public (visible to everyone) */}
-        <div className="mt-12">
-                     <div className="mb-6">
+        <div className="mt-12 max-w-4xl mx-auto">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Recent Bids</h2>
           </div>
            
@@ -764,10 +764,10 @@ const AuctionDetail = () => {
 
         {/* Bid History - Only for logged-in users */}
         {user && (
-          <div className="mt-12">
-                      <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Your Bid History</h2>
-          </div>
+          <div className="mt-12 max-w-4xl mx-auto">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Your Bid History</h2>
+            </div>
             {bidsLoading ? (
               <div className="text-center py-4">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto"></div>
