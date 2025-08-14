@@ -166,19 +166,24 @@ const AuctionDetail = () => {
       
       if (bidsData.success && bidsData.bids) {
         console.log('Raw bids array:', bidsData.bids);
+        console.log('Current auction state:', auction);
+        console.log('Bids count:', bidsData.bids.length);
         setBids(bidsData.bids);
         const recentBidsArray = bidsData.bids.slice(0, 5);
         console.log('Setting recent bids:', recentBidsArray);
         setRecentBids(recentBidsArray); // Show last 5 bids as recent
         
         // Update auction total_bids count based on actual bids
-        if (auction && auction.total_bids !== bidsData.bids.length) {
-          setAuction(prev => ({
-            ...prev,
-            total_bids: bidsData.bids.length
-          }));
-          console.log('🔢 Updated auction total_bids to:', bidsData.bids.length);
-        }
+        setAuction(prev => {
+          if (prev && prev.total_bids !== bidsData.bids.length) {
+            console.log('🔢 Updated auction total_bids from', prev.total_bids, 'to:', bidsData.bids.length);
+            return {
+              ...prev,
+              total_bids: bidsData.bids.length
+            };
+          }
+          return prev;
+        });
         
         // Filter bid history to show only current user's bids
         if (user) {
