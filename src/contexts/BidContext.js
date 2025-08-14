@@ -72,7 +72,18 @@ export const BidProvider = ({ children }) => {
       if (response.data.success) {
         console.log('✅ Razorpay order created successfully:', response.data);
         console.log('🔍 Order details:', response.data.razorpay_order);
-        return response.data;
+        
+        // Add fee information to the response
+        const feeInfo = {
+          bid_amount: amount,
+          transaction_fee: calculateTransactionFee(amount),
+          total_amount: totalAmount
+        };
+        
+        return {
+          ...response.data,
+          fee_info: feeInfo
+        };
       } else {
         console.error('❌ API returned success: false:', response.data);
         throw new Error(response.data.error || 'Failed to create Razorpay order');
@@ -115,7 +126,9 @@ export const BidProvider = ({ children }) => {
           signature: signature,
           auction_id: auctionId,
           amount: amount,
-          location: location
+          location: location,
+          transaction_fee: calculateTransactionFee(amount),
+          total_amount: getTotalAmount(amount)
         })
       });
       
@@ -181,15 +194,20 @@ export const BidProvider = ({ children }) => {
     }
   };
 
-  // Calculate platform fee (if any)
-  const calculatePlatformFee = (amount) => {
-    // No platform fee in this implementation
-    return 0;
+  // Calculate transaction fee based on Razorpay processing charges
+  const calculateTransactionFee = (amount) => {
+    if (amount <= 1000) {
+      return 7.99;
+    } else if (amount <= 25000) {
+      return 11.99;
+    } else {
+      return 14.99;
+    }
   };
 
-  // Get total amount including fees
+  // Get total amount including transaction fee
   const getTotalAmount = (amount) => {
-    return amount + calculatePlatformFee(amount);
+    return amount + calculateTransactionFee(amount);
   };
 
   // Place bid using Razorpay
@@ -225,9 +243,18 @@ export const BidProvider = ({ children }) => {
       }
       console.log('✅ Amount valid:', amount);
 
-      // Create Razorpay order
-      console.log('🔄 Creating Razorpay order...');
-      const orderResult = await createRazorpayOrder(auctionId, amount, location);
+      // Calculate transaction fee and total amount
+      const transactionFee = calculateTransactionFee(amount);
+      const totalAmount = getTotalAmount(amount);
+      console.log('💰 Fee calculation:', {
+        bidAmount: amount,
+        transactionFee: transactionFee,
+        totalAmount: totalAmount
+      });
+
+      // Create Razorpay order with total amount (bid + fee)
+      console.log('🔄 Creating Razorpay order for total amount:', totalAmount);
+      const orderResult = await createRazorpayOrder(auctionId, totalAmount, location);
       console.log('✅ Razorpay order created:', orderResult);
 
       if (!orderResult.success) {

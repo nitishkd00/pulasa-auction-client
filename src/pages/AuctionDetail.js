@@ -596,8 +596,21 @@ const AuctionDetail = () => {
             {/* Bid Form: Only show if user is logged in, auction is live, user is not admin, and not auction creator */}
             {auction.status === 'active' && (
               user && !user.is_admin && auction.created_by !== user.id ? (
-                <div className="bg-white p-6 rounded-lg shadow-md" id="bid-form">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Your Bid</h3>
+                                 <div className="bg-white p-6 rounded-lg shadow-md" id="bid-form">
+                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Place Your Bid</h3>
+                   
+                   {/* Transaction Fee Information */}
+                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                     <h4 className="text-sm font-medium text-blue-900 mb-2">💰 Transaction Fee Structure</h4>
+                     <div className="text-xs text-blue-800 space-y-1">
+                       <div>• Bid Amount ₹0 - ₹1000: ₹7.99 fee</div>
+                       <div>• Bid Amount ₹1001 - ₹25000: ₹11.99 fee</div>
+                       <div>• Bid Amount ₹25001+: ₹14.99 fee</div>
+                     </div>
+                     <p className="text-xs text-blue-700 mt-2 italic">
+                       Fee covers Razorpay processing charges and is non-refundable
+                     </p>
+                   </div>
                   
                   {/* Debug Button - Only show in development */}
                   {process.env.NODE_ENV === 'development' && (
@@ -632,18 +645,25 @@ const AuctionDetail = () => {
                       />
                     </div>
 
-                    {bidAmount && (
-                      <div className="bg-gray-50 p-4 rounded-md space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Bid Amount:</span>
-                          <span>₹{parseFloat(bidAmount) || 0}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold border-t pt-2">
-                          <span>Total Amount:</span>
-                          <span>₹{parseFloat(bidAmount) || 0}</span>
-                        </div>
-                      </div>
-                    )}
+                                         {bidAmount && (
+                       <div className="bg-gray-50 p-4 rounded-md space-y-2 text-sm">
+                         <div className="flex justify-between">
+                           <span>Bid Amount:</span>
+                           <span>₹{parseFloat(bidAmount) || 0}</span>
+                         </div>
+                         <div className="flex justify-between text-gray-600">
+                           <span>Transaction Fee:</span>
+                           <span>₹{bidAmount <= 1000 ? '7.99' : bidAmount <= 25000 ? '11.99' : '14.99'}</span>
+                         </div>
+                         <div className="flex justify-between font-semibold border-t pt-2">
+                           <span>Total Amount:</span>
+                           <span>₹{(parseFloat(bidAmount) || 0) + (bidAmount <= 1000 ? 7.99 : bidAmount <= 25000 ? 11.99 : 14.99)}</span>
+                         </div>
+                         <div className="text-xs text-gray-500 mt-2">
+                           💡 Transaction fee covers Razorpay processing charges and is non-refundable
+                         </div>
+                       </div>
+                     )}
 
                     {error && (
                       <div className="text-red-600 text-sm">{error}</div>
