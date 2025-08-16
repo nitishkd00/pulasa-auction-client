@@ -223,7 +223,7 @@ export const BidProvider = ({ children }) => {
   };
 
   // Place bid using Razorpay
-  const placeBid = async (auctionId, amount) => {
+  const placeBid = async (auctionId, amount, onSuccess = null) => {
     try {
       console.log('🎯 Starting placeBid...', { auctionId, amount });
       
@@ -364,14 +364,23 @@ export const BidProvider = ({ children }) => {
             if (verificationResult.success) {
               console.log('✅ Bid completed successfully after payment verification');
               console.log('🎯 Final bid result:', verificationResult);
+              
               // Show success message
               toast.success('Bid placed successfully!');
-              // Refresh auction data after successful bid
-              window.location.reload();
+              
+              // Call success callback if provided
+              if (onSuccess && typeof onSuccess === 'function') {
+                console.log('🔄 Calling success callback...');
+                onSuccess(verificationResult);
+              }
+              
+              // Return success data for frontend to handle state updates
+              return verificationResult;
             } else {
               console.error('❌ Payment verification failed:', verificationResult.error);
               console.error('❌ Full verification result:', verificationResult);
               toast.error('Payment verification failed. Please try again.');
+              throw new Error(verificationResult.error || 'Payment verification failed');
             }
           } catch (error) {
             console.error('❌ Error during payment verification:', error);

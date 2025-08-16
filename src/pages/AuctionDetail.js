@@ -47,7 +47,25 @@ const AuctionDetail = () => {
     
     // Join auction room for real-time updates
     if (socket) {
-      socket.emit('joinAuction', id);
+      console.log(`🔌 Joining auction room for auction ID: ${id}`);
+      console.log(`🔌 Socket connection state:`, {
+        connected: socket.connected,
+        id: socket.id,
+        readyState: socket.readyState
+      });
+      
+      if (socket.connected) {
+        socket.emit('joinAuction', id);
+        console.log(`✅ Join auction request sent for auction: ${id}`);
+      } else {
+        console.log(`⚠️ Socket not connected, waiting for connection...`);
+        socket.on('connect', () => {
+          console.log(`🔌 Socket connected, now joining auction room: ${id}`);
+          socket.emit('joinAuction', id);
+        });
+      }
+    } else {
+      console.log(`⚠️ Socket not available for auction: ${id}`);
     }
 
     return () => {
@@ -62,10 +80,18 @@ const AuctionDetail = () => {
 
     // Listen for new bids
     socket.on('newBid', (bidData) => {
+      console.log('🔄 New bid event received:', bidData);
+      console.log('🔄 Current auction ID from URL:', id);
+      console.log('🔄 Event auction_id:', bidData.auction_id);
+      console.log('🔄 IDs match?', bidData.auction_id === id);
+      
       if (bidData.auction_id === id) {
-        console.log('🔄 New bid received, updating auction data...');
+        console.log('✅ IDs match, updating auction data...');
         // Update auction data and bids
         loadAuctionData();
+      } else {
+        console.log('❌ IDs do not match, ignoring event');
+        console.log('❌ Expected:', id, 'Received:', bidData.auction_id);
       }
     });
 
@@ -95,6 +121,7 @@ const AuctionDetail = () => {
 
   useEffect(() => {
     if (!socket || !user) return;
+    
     // Listen for outbid event
     socket.on('outbid', (data) => {
       console.log('🚨 Outbid event received:', data);
@@ -113,44 +140,50 @@ const AuctionDetail = () => {
         });
       }
     });
+    
     // Listen for auction won event
     socket.on('auctionWon', (data) => {
       if (data && data.auctionId === id) {
         setShowWinnerModal(true);
       }
     });
-    // Listen for new bid events to update bids in real-time
-    socket.on('newBid', (bidData) => {
-      console.log('🔄 New bid received:', bidData);
-      if (bidData.auction_id === id) {
-        console.log('🔄 New bid for this auction, updating bids data...');
-        // Update auction data and bids
-        loadAuctionData();
-      }
-    });
+    
+    // Note: newBid listener is handled in the first useEffect to avoid duplicates
+    
     return () => {
       socket.off('outbid');
       socket.off('auctionWon');
-      socket.off('newBid');
     };
-  }, [socket, user, id]);
+  }, [socket, user, id, auction]);
 
   const loadAuctionData = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
+      
       if (!id || id === 'undefined') {
         setError('Invalid auction ID');
         setLoading(false);
         return;
       }
+      
       const auctionData = await fetchAuctionById(id);
       console.log('Auction data received:', auctionData);
+      
+      if (!auctionData || !auctionData.auction) {
+        setError('Failed to load auction data');
+        setLoading(false);
+        return;
+      }
+      
       setAuction(auctionData.auction);
       
       // Load bids separately to ensure we have the latest data
       await loadBidsData();
+      
     } catch (err) {
-      setError(err.message);
+      console.error('❌ Error loading auction data:', err);
+      setError(err.message || 'Failed to load auction data');
     } finally {
       setLoading(false);
     }
@@ -266,39 +299,64 @@ const AuctionDetail = () => {
       setError(null);
       
       console.log('🔄 Calling placeBid...');
-              const result = await placeBid(auction._id, parseFloat(bidAmount));
+      
+      // Define success callback to update UI after payment
+      const onBidSuccess = async (result) => {
+        console.log('🎉 Bid success callback triggered:', result);
+        
+        // Clear form
+        setBidAmount('');
+        setShowBidForm(false);
+        
+        // Refresh auction data to show updated bids
+        console.log('🔄 Refreshing auction data after successful bid...');
+        await loadAuctionData();
+        console.log('✅ Auction data refreshed after successful bid');
+        
+        // Show additional success message
+        toast.success('Bid placed successfully! Auction data updated.');
+      };
+      
+      const result = await placeBid(auction._id, parseFloat(bidAmount), onBidSuccess);
+      console.log('📥 placeBid result received:', result);
       
       if (result.success) {
-        console.log('✅ Payment popup opened successfully');
-        
         if (result.status === 'payment_pending') {
-          // Show info message that payment is pending
+          // Payment popup opened, wait for completion
+          console.log('✅ Payment popup opened successfully');
           toast.info(result.message || 'Payment popup opened. Please complete the payment to place your bid.');
           
-          // Don't clear the form or hide it yet - wait for payment completion
-          // The form will be handled by the payment success/error callbacks in the context
+          // Don't clear form yet - wait for payment completion via callback
+        } else if (result.bid) {
+          // Payment already completed and verified (immediate success)
+          console.log('✅ Bid placed successfully (immediate success):', result.bid);
+          
+          // Clear form
+          setBidAmount('');
+          setShowBidForm(false);
+          
+          // Show success message
+          toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
+          
+          // Refresh auction data
+          console.log('🔄 Refreshing auction data...');
+          await loadAuctionData();
+          console.log('✅ Auction data refreshed');
         } else {
-          // This shouldn't happen with the new flow, but handle it just in case
-          console.log('✅ Bid placed successfully (immediate success)');
-      setBidAmount('');
-      setShowBidForm(false);
-      toast.success(`Bid placed successfully! Amount: ₹${parseFloat(bidAmount)}`);
-      
-      console.log('🔄 Refreshing auction data...');
-      await loadAuctionData();
-      console.log('✅ Auction data refreshed');
+          // Unexpected result structure
+          console.warn('⚠️ Unexpected result structure:', result);
         }
+      } else {
+        console.error('❌ placeBid failed:', result.error);
+        setError(result.error || 'Failed to place bid');
+        toast.error(result.error || 'Failed to place bid');
       }
       
     } catch (err) {
-      console.error('💥 confirmBid error:', {
-        message: err.message,
-        name: err.name,
-        stack: err.stack
-      });
-      
+      console.error('❌ Error in confirmBid:', err);
       setError(err.message || 'Failed to place bid');
       toast.error(err.message || 'Failed to place bid');
+    } finally {
       setBidding(false);
     }
   };
